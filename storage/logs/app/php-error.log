@@ -1,0 +1,386 @@
+[30-Apr-2026 03:58:31 UTC] Failed to list Runpod pods: Runpod request failed: Connection timed out after 10001 milliseconds
+[30-Apr-2026 04:44:50 UTC] Supabase cURL error: Resolving timed out after 5000 milliseconds
+[30-Apr-2026 07:04:59 UTC] [runpod-status] Runpod request failed: Operation timed out after 30002 milliseconds with 0 bytes received in /home/barikhan/Projects/nutmeg/website/app/Services/RunpodPodService.php:1397
+[30-Apr-2026 07:04:59 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 07:04:59 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 07:04:59 UTC] [runpod-status] Runpod request failed: Could not resolve host: rest.runpod.io in /home/barikhan/Projects/nutmeg/website/app/Services/RunpodPodService.php:1397
+[30-Apr-2026 07:05:04 UTC] [runpod-status] Runpod request failed: Could not resolve host: rest.runpod.io in /home/barikhan/Projects/nutmeg/website/app/Services/RunpodPodService.php:1397
+[30-Apr-2026 07:05:09 UTC] [runpod-status] Runpod request failed: Could not resolve host: rest.runpod.io in /home/barikhan/Projects/nutmeg/website/app/Services/RunpodPodService.php:1397
+[30-Apr-2026 07:05:12 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 07:05:12 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 07:05:14 UTC] [runpod-status] Runpod request failed: Could not resolve host: rest.runpod.io in /home/barikhan/Projects/nutmeg/website/app/Services/RunpodPodService.php:1397
+[30-Apr-2026 07:05:19 UTC] [runpod-status] Runpod request failed: Could not resolve host: rest.runpod.io in /home/barikhan/Projects/nutmeg/website/app/Services/RunpodPodService.php:1397
+[30-Apr-2026 07:05:24 UTC] [runpod-status] Runpod request failed: Could not resolve host: rest.runpod.io in /home/barikhan/Projects/nutmeg/website/app/Services/RunpodPodService.php:1397
+[30-Apr-2026 07:05:29 UTC] [runpod-status] Runpod request failed: Could not resolve host: rest.runpod.io in /home/barikhan/Projects/nutmeg/website/app/Services/RunpodPodService.php:1397
+[30-Apr-2026 07:05:34 UTC] [runpod-status] Runpod request failed: Could not resolve host: rest.runpod.io in /home/barikhan/Projects/nutmeg/website/app/Services/RunpodPodService.php:1397
+[30-Apr-2026 07:05:39 UTC] [runpod-status] Runpod request failed: Could not resolve host: rest.runpod.io in /home/barikhan/Projects/nutmeg/website/app/Services/RunpodPodService.php:1397
+[30-Apr-2026 07:05:42 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 07:05:42 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 07:05:44 UTC] [runpod-status] Runpod request failed: Could not resolve host: rest.runpod.io in /home/barikhan/Projects/nutmeg/website/app/Services/RunpodPodService.php:1397
+[30-Apr-2026 07:05:49 UTC] [runpod-status] Runpod request failed: Could not resolve host: rest.runpod.io in /home/barikhan/Projects/nutmeg/website/app/Services/RunpodPodService.php:1397
+[30-Apr-2026 07:05:54 UTC] [runpod-status] Runpod request failed: Could not resolve host: rest.runpod.io in /home/barikhan/Projects/nutmeg/website/app/Services/RunpodPodService.php:1397
+[30-Apr-2026 07:05:59 UTC] [runpod-status] Runpod request failed: Could not resolve host: rest.runpod.io in /home/barikhan/Projects/nutmeg/website/app/Services/RunpodPodService.php:1397
+[30-Apr-2026 07:06:04 UTC] [runpod-status] Runpod request failed: Could not resolve host: rest.runpod.io in /home/barikhan/Projects/nutmeg/website/app/Services/RunpodPodService.php:1397
+[30-Apr-2026 07:06:09 UTC] [runpod-status] Runpod request failed: Could not resolve host: rest.runpod.io in /home/barikhan/Projects/nutmeg/website/app/Services/RunpodPodService.php:1397
+[30-Apr-2026 07:06:12 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 07:06:12 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 07:06:14 UTC] [runpod-status] Runpod request failed: Could not resolve host: rest.runpod.io in /home/barikhan/Projects/nutmeg/website/app/Services/RunpodPodService.php:1397
+[30-Apr-2026 07:06:19 UTC] [runpod-status] Runpod request failed: Could not resolve host: rest.runpod.io in /home/barikhan/Projects/nutmeg/website/app/Services/RunpodPodService.php:1397
+[30-Apr-2026 07:06:24 UTC] [runpod-status] Runpod request failed: Could not resolve host: rest.runpod.io in /home/barikhan/Projects/nutmeg/website/app/Services/RunpodPodService.php:1397
+[30-Apr-2026 07:12:18 UTC] Attempting cheapest GPU option: RTX 2000 Ada @ $0.24/hr
+[30-Apr-2026 07:12:20 UTC] Successfully created new pod srrg196oa6spin for GPU NVIDIA RTX 2000 Ada Generation (requested duration hint: 1 hour(s))
+[30-Apr-2026 07:25:57 UTC] Attempting cheapest GPU option: RTX 2000 Ada @ $0.24/hr
+[30-Apr-2026 07:25:59 UTC] Successfully created new pod hnizulwf5dymk0 for GPU NVIDIA RTX 2000 Ada Generation (requested duration hint: 1 hour(s))
+[30-Apr-2026 08:44:29 UTC] Supabase cURL error: Resolving timed out after 5000 milliseconds
+[30-Apr-2026 08:54:09 UTC] Supabase cURL error: Resolving timed out after 5000 milliseconds
+[30-Apr-2026 09:41:58 UTC] Supabase cURL error: Resolving timed out after 5000 milliseconds
+[30-Apr-2026 12:32:25 UTC] Supabase cURL error: Resolving timed out after 5001 milliseconds
+[30-Apr-2026 12:34:26 UTC] Supabase cURL error: Resolving timed out after 5001 milliseconds
+[30-Apr-2026 12:36:26 UTC] Supabase cURL error: Resolving timed out after 5000 milliseconds
+[30-Apr-2026 12:36:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:36:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:37:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:37:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:37:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:37:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:38:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:38:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:38:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:38:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:39:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:39:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:39:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:39:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:40:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:40:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:40:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:40:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:41:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:41:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:41:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:41:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:42:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:42:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:42:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:42:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:43:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:43:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:43:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:43:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:44:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:44:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:44:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:44:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:45:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:45:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:45:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:45:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:46:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:46:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:46:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:46:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:47:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:47:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:47:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:47:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:48:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:48:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:48:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:48:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:49:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:49:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:49:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:49:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:50:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:50:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:50:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:50:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:51:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:51:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:51:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:51:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:52:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:52:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:52:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:52:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:53:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:53:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:53:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:53:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:54:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:54:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:54:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:54:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:55:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:55:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:55:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:55:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:56:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:56:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:56:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:56:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:57:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:57:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:57:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:57:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:58:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:58:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:58:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:58:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:59:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:59:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:59:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 12:59:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:00:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:00:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:00:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:00:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:01:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:01:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:01:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:01:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:02:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:02:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:02:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:02:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:03:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:03:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:03:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:03:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:04:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:04:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:04:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:04:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:05:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:05:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:05:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:05:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:06:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:06:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:06:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:06:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:07:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:07:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:07:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:07:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:08:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:08:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:08:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:08:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:09:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:09:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:09:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:09:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:10:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:10:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:10:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:10:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:11:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:11:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:11:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:11:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:12:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:12:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:12:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:12:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:13:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:13:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:13:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:13:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:14:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:14:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:14:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:14:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:15:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:15:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:15:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:15:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:16:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:16:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:16:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:16:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:17:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:17:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:17:51 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:17:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:18:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:18:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:18:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:18:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:19:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:19:21 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:19:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:19:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:20:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:20:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:20:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:20:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:21:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:21:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:21:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:21:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:22:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:22:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:22:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:22:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:23:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:23:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:23:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:23:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:24:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:24:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:24:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:24:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:25:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:25:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:25:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:25:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:26:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:26:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:26:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:26:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:27:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:27:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:27:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:27:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:28:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:28:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:28:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:28:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:29:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:29:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:29:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:29:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:30:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:30:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:30:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:30:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:31:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:31:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:31:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:31:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:32:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:32:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:32:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:32:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:33:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:33:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:33:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:33:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:34:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:34:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:34:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:34:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:35:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:35:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:35:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:35:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:36:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:36:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:36:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:36:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:37:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:37:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:37:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:37:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:38:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:38:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:38:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:38:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:39:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:39:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:39:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:39:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:40:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:40:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:40:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:40:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:41:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:41:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:41:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:41:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:42:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:42:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:42:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:42:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:43:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:43:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:43:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:43:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:44:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:44:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:44:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:44:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:45:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:45:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:45:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:45:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:46:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:46:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:46:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:46:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:47:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:47:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:47:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:47:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:48:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:48:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:48:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:48:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:49:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:49:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:49:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:49:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:50:23 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:50:23 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:50:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:50:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:51:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:51:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:51:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:51:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:52:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:52:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:52:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:52:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:53:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:53:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:53:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:53:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:54:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:54:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:54:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:54:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:55:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:55:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:55:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:55:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:56:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:56:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:56:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:56:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:57:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:57:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:57:52 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:57:57 UTC] Supabase cURL error: Resolving timed out after 5000 milliseconds
+[30-Apr-2026 13:58:22 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:58:23 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:58:53 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 13:58:53 UTC] Supabase cURL error: Could not resolve host: strddrjneurylxoolimj.supabase.co
+[30-Apr-2026 14:10:29 UTC] Supabase cURL error: Resolving timed out after 5001 milliseconds
+[30-Apr-2026 14:17:24 UTC] Attempting cheapest GPU option: A40 @ $0.44/hr
+[30-Apr-2026 14:17:26 UTC] Successfully created new pod 1cord3izsozg7y for GPU NVIDIA A40 (requested duration hint: 1 hour(s))
+[30-Apr-2026 14:26:09 UTC] Supabase cURL error: Resolving timed out after 5000 milliseconds
+[30-Apr-2026 14:30:41 UTC] Supabase cURL error: Resolving timed out after 5001 milliseconds
+[30-Apr-2026 14:31:12 UTC] Supabase cURL error: Resolving timed out after 5000 milliseconds
+[30-Apr-2026 14:43:12 UTC] Supabase cURL error: Resolving timed out after 5001 milliseconds
+[30-Apr-2026 19:20:27 UTC] Failed to list Runpod pods: Runpod request failed: Connection timed out after 10002 milliseconds
+[30-Apr-2026 19:20:37 UTC] Failed to list Runpod pods: Runpod request failed: Connection timed out after 10002 milliseconds
+[30-Apr-2026 19:20:42 UTC] Supabase cURL error: Connection timed out after 5002 milliseconds
+[30-Apr-2026 19:20:47 UTC] Supabase cURL error: Resolving timed out after 5002 milliseconds
+[30-Apr-2026 19:24:52 UTC] Failed to list Runpod pods: Runpod request failed: Resolving timed out after 10002 milliseconds
+[30-Apr-2026 19:25:15 UTC] Failed to list Runpod pods: Runpod request failed: Resolving timed out after 10002 milliseconds
+[30-Apr-2026 19:41:56 UTC] Attempting cheapest GPU option: RTX 2000 Ada @ $0.24/hr
+[30-Apr-2026 19:41:58 UTC] Successfully created new pod 5mbzgy918ykxhk for GPU NVIDIA RTX 2000 Ada Generation (requested duration hint: 1 hour(s))
+[30-Apr-2026 21:24:51 UTC] [ai-callback][match:1] discarding callback for unknown match
+[30-Apr-2026 21:47:12 UTC] [ai-callback][match:1] discarding callback for unknown match

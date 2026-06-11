@@ -1,0 +1,62 @@
+{
+    "video_info": {
+        "path": "/workspace/nutmeg-ai/stored_uploads/source_9acbda14a07a676a2411d527e8fb64f9.mp4",
+        "total_frames": 1272,
+        "frame_rate": 50,
+        "elapsed_time_sec": 51.4,
+        "processing_fps": 24.75,
+        "ball_detection_rate": 0,
+        "camera_type": "one_sided",
+        "ball_detector_source": "dedicated_model",
+        "speed_calibration": {
+            "pixel_to_meter": 0.025,
+            "max_realistic_speed_kmh": 36,
+            "speed_smoothing_window": 8
+        }
+    },
+    "statistics_definitions": {
+        "passes": "Possession transfer to teammate (ball travel >= 30px, player dist >= 40px)",
+        "defense": "Interception from opponent (within 400px, ball travel >= 10px)",
+        "speed": "Sprints \u226528.0 km/h (each sprint = +1, smoothed)",
+        "physical": "Opponent contact count (overlap ratio >= 0.50)",
+        "dribbles": "Has ball + moves + beats opponent",
+        "shots": "Ball exits player box at speed",
+        "distance_m": "Total distance traveled"
+    },
+    "team_statistics": {
+        "red": {
+            "passes": 0,
+            "defense": 0,
+            "speed": 0,
+            "physical": 0,
+            "dribbles": 0,
+            "shots": 0,
+            "total_distance_m": 0,
+            "top_speed_kmh": 0
+        },
+        "blue": {
+            "passes": 0,
+            "defense": 0,
+            "speed": 0,
+            "physical": 0,
+            "dribbles": 0,
+            "shots": 0,
+            "total_distance_m": 0,
+            "top_speed_kmh": 0
+        }
+    },
+    "player_statistics": {
+        "1": {
+            "team": null,
+            "jersey_number": null,
+            "passes": 0,
+            "defense": 0,
+            "speed": 0,
+            "physical": 0,
+            "dribbles": 0,
+            "shots": 0,
+            "distance_m": 21.9,
+            "top_speed_kmh": 15.8
+        }
+    }
+}

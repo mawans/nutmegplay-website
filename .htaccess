@@ -1,0 +1,19 @@
+Options -Indexes
+DirectoryIndex index.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Serve public assets while keeping index.php as the application router.
+    RewriteCond %{DOCUMENT_ROOT}/public/$1/$2 -f
+    RewriteRule ^(assets|vendor|videos)/(.*)$ public/$1/$2 [L]
+
+    # Send every non-file/non-directory request to the PHP router.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+<IfModule !mod_rewrite.c>
+    ErrorDocument 404 /index.php
+</IfModule>
