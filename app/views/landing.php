@@ -3,9 +3,9 @@
   <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>NutmegPlay | Elevate Your Game with AI</title>
+    <title>FiveStats | Elevate Your Game with AI</title>
     <meta
-      content="NutmegPlay - The ultimate AI-powered football platform for player tracking, matchmaking, and performance analysis."
+      content="FiveStats - The ultimate AI-powered football platform for player tracking, matchmaking, and performance analysis."
       name="description"
     />
     <!-- Tailwind CSS CDN -->
@@ -86,27 +86,14 @@
     <nav class="fixed top-0 w-full z-50 glass py-4">
       <div class="container mx-auto px-6 flex justify-between items-center">
         <a href="/" class="flex items-center gap-2" data-purpose="logo">
-          <div
-            class="w-8 h-8 bg-primary rounded-full flex items-center justify-center"
-          >
-            <svg
-              class="w-5 h-5 text-dark"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"
-              ></path>
-            </svg>
-          </div>
-          <span class="text-xl font-extrabold tracking-tight"
-            >Nutmeg<span class="text-primary">Play</span></span
-          >
+          <img src="/public/assets/fivestats-logo.png" alt="FiveStats" class="w-8 h-8 rounded-lg">
+          <span class="text-xl font-extrabold tracking-tight">FiveStats</span>
         </a>
         <div class="hidden md:flex items-center gap-8 text-sm font-medium">
           <a class="hover:text-primary transition-colors" href="#features">Features</a>
           <a class="hover:text-primary transition-colors" href="#teams">Teams</a>
           <a class="hover:text-primary transition-colors" href="#players">Players</a>
+          <a class="hover:text-primary transition-colors" href="/support">Support</a>
           <?php if (!empty($isLoggedIn)): ?>
             <a
               class="px-6 py-2 bg-primary text-dark rounded-full font-bold hover:scale-105 transition-transform"
@@ -151,6 +138,7 @@
       <a class="text-lg font-medium hover:text-primary transition-colors" href="#features">Features</a>
       <a class="text-lg font-medium hover:text-primary transition-colors" href="#teams">Teams</a>
       <a class="text-lg font-medium hover:text-primary transition-colors" href="#players">Players</a>
+      <a class="text-lg font-medium hover:text-primary transition-colors" href="/support">Support</a>
       <hr class="border-white/10">
       <?php if (!empty($isLoggedIn)): ?>
         <a class="px-6 py-3 bg-primary text-dark rounded-full font-bold text-center hover:scale-105 transition-transform" href="/dashboard">Dashboard</a>
@@ -179,7 +167,7 @@
             Elevate Your <span class="text-primary">Game</span> With AI.
           </h1>
           <p class="text-muted text-lg md:text-xl mb-10 max-w-lg">
-            Track every sprint, goal, and assist. NutmegPlay brings
+            Track every sprint, goal, and assist. FiveStats brings
             professional-grade performance analytics to every local pitch.
           </p>
           <div class="flex flex-wrap gap-4">
@@ -204,7 +192,7 @@
             <img
               alt="Football Player in Action"
               class="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-110"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8GYTGtRUwbDv7bIfDVmYh_7mQ3q2mEZh_LZIzRZNCmIh3oc-P02Ie39G0zI1pChvfqRjTnhzJoD2A6VK4FpTUNe-8SvlkTJbAmzO4LX_MIKsknAqcAZYHpg4GoNjiCqcgGxY_ymYcvPQwHHzpwNfHvMU2F5nlOd_LeP1EtxwZSfBFdwcZN7KygmjaMiPCz8inNvjJaIac3vi0KG2_Jag15vcRGpLlf9hCvQDasP2I1ecJVpBEOuwT-DeuZcCcVfhkpYmz0EBgcs0"
+              src="/public/assets/soccer-hero.jpg"
             />
             <div
               class="absolute inset-0 bg-gradient-to-t from-dark via-transparent to-transparent"
@@ -479,7 +467,7 @@
           <span class="text-primary underline decoration-primary/30 underline-offset-8">pitch</span>?
         </h2>
         <p class="text-muted text-xl mb-12 max-w-2xl mx-auto">
-          Join over 100,000 players who are already using NutmegPlay to improve
+          Join over 100,000 players who are already using FiveStats to improve
           their game, find matches, and build their football legacy.
         </p>
         <div class="flex flex-col sm:flex-row justify-center gap-4">
@@ -505,12 +493,8 @@
       <div class="container mx-auto px-6 grid md:grid-cols-4 gap-12">
         <div class="col-span-2">
           <a href="/" class="flex items-center gap-2 mb-6" data-purpose="logo">
-            <div class="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-              <svg class="w-4 h-4 text-dark" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"></path>
-              </svg>
-            </div>
-            <span class="text-lg font-bold tracking-tight">Nutmeg<span class="text-primary">Play</span></span>
+            <img src="/public/assets/fivestats-logo.png" alt="FiveStats" class="w-6 h-6 rounded-md">
+            <span class="text-lg font-bold tracking-tight">FiveStats</span>
           </a>
           <p class="text-muted text-sm max-w-xs leading-relaxed">
             The ultimate platform for the modern footballer. Empowering players
@@ -529,15 +513,16 @@
         <div>
           <h5 class="font-bold mb-6 text-sm uppercase tracking-widest">Company</h5>
           <ul class="space-y-4 text-muted text-sm">
-            <li><a class="hover:text-primary transition-colors" href="#">About Us</a></li>
-            <li><a class="hover:text-primary transition-colors" href="#">Privacy Policy</a></li>
-            <li><a class="hover:text-primary transition-colors" href="#">Terms of Service</a></li>
-            <li><a class="hover:text-primary transition-colors" href="#">Contact</a></li>
+            <li><a class="hover:text-primary transition-colors" href="/about">About Us</a></li>
+            <li><a class="hover:text-primary transition-colors" href="/privacy">Privacy Policy</a></li>
+            <li><a class="hover:text-primary transition-colors" href="/terms">Terms of Service</a></li>
+            <li><a class="hover:text-primary transition-colors" href="/contact">Contact</a></li>
+            <li><a class="hover:text-primary transition-colors" href="/support">Support</a></li>
           </ul>
         </div>
       </div>
       <div class="container mx-auto px-6 mt-12 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
-        <p class="text-xs text-muted/50">&copy; <?= date('Y') ?> NutmegPlay. All rights reserved.</p>
+        <p class="text-xs text-muted/50">&copy; <?= date('Y') ?> FiveStats. All rights reserved.</p>
         <div class="flex gap-6">
           <a class="text-muted/50 hover:text-white transition-colors" href="#">
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">

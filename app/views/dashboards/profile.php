@@ -131,7 +131,7 @@ $createdAt = $account['created_at'] ?? '';
             <!-- Football Profile -->
             <div class="bg-card-dark border border-[#264531] rounded-2xl p-6 space-y-5">
                 <div class="flex items-center gap-2 mb-1">
-                    <span class="material-symbols-outlined text-primary">sports_soccer</span>
+                    <img src="/public/assets/fivestats-logo.png" alt="" class="size-5 rounded-md">
                     <h4 class="text-base font-bold">Football Profile</h4>
                 </div>
 

@@ -249,9 +249,17 @@ class SupabaseClient
     /* ------------------------------------------------------------------ */
 
     /** Sign up with email + password via GoTrue */
-    public function authSignUp(string $email, string $password, array $metadata = []): array|null
+    public function authSignUp(
+        string $email,
+        string $password,
+        array $metadata = [],
+        ?string $emailRedirectTo = null
+    ): array|null
     {
         $url = $this->url . '/auth/v1/signup';
+        if (is_string($emailRedirectTo) && trim($emailRedirectTo) !== '') {
+            $url .= '?redirect_to=' . rawurlencode(trim($emailRedirectTo));
+        }
         $body = ['email' => $email, 'password' => $password];
         if ($metadata) {
             $body['data'] = $metadata;
@@ -285,6 +293,23 @@ class SupabaseClient
         return $this->request('POST', $url, $body, $headers);
     }
 
+    /** Permanently delete an Auth user via the Admin API. */
+    public function authAdminDeleteUser(string $uid): array|null
+    {
+        if (!$this->serviceRoleKey) {
+            return ['error' => true, 'status' => 500, 'message' => 'Service role key is not configured.'];
+        }
+
+        $url = $this->url . '/auth/v1/admin/users/' . rawurlencode($uid);
+        $headers = [
+            'apikey: ' . $this->serviceRoleKey,
+            'Authorization: Bearer ' . $this->serviceRoleKey,
+            'Content-Type: application/json',
+        ];
+
+        return $this->request('DELETE', $url, null, $headers);
+    }
+
     public function hasServiceRoleKey(): bool
     {
         return !empty($this->serviceRoleKey);
@@ -304,11 +329,10 @@ class SupabaseClient
     public function authSendPasswordRecoveryEmail(string $email, ?string $redirectTo = null): array|null
     {
         $url = $this->url . '/auth/v1/recover';
-        $body = ['email' => $email];
         if (is_string($redirectTo) && trim($redirectTo) !== '') {
-            $body['redirect_to'] = trim($redirectTo);
+            $url .= '?redirect_to=' . rawurlencode(trim($redirectTo));
         }
-        return $this->request('POST', $url, $body, $this->publicHeaders());
+        return $this->request('POST', $url, ['email' => $email], $this->publicHeaders());
     }
 
     /** Update the current authenticated user's password */

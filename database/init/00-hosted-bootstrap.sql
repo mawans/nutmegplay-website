@@ -1,4 +1,4 @@
--- NutmegPlay hosted Supabase bootstrap
+-- FiveStats hosted Supabase bootstrap
 -- Run this on a new or empty hosted Supabase project.
 -- If this project already contains live app tables/data, stop and review before running.
 

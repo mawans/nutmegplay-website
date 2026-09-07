@@ -16,6 +16,11 @@ class PlayersController extends Controller
     /** GET /players */
     public function index(): void
     {
+        if (!Auth::check()) {
+            (new PublicPageController())->players();
+            return;
+        }
+
         Auth::requireAuth();
 
         $uid = Auth::uid();

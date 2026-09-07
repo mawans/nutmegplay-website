@@ -8,7 +8,7 @@
 return [
     'url'  => getenv('SUPABASE_URL')
         ?: getenv('SUPABASE_API_EXTERNAL_URL')
-        ?: 'http://127.0.0.1:54321',
+        ?: '',
     'key'  => getenv('SUPABASE_KEY')
         ?: getenv('SUPABASE_ANON_KEY')
         ?: '',

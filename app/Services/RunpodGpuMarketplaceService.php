@@ -17,6 +17,7 @@ class RunpodGpuMarketplaceService
         'NVIDIA GeForce RTX 4080',
     ];
     private const DEFAULT_MIN_MEMORY_GB = 16;
+    private const DEFAULT_MAX_HOURLY_COST = 1.0;
 
     private string $apiKey;
     private ?array $provisioningBlueprint = null;
@@ -104,7 +105,12 @@ class RunpodGpuMarketplaceService
                         break;
                     }
                 }
-                if (!$isPreferred) {
+
+                // The configured IDs are preferences, not a hard allowlist.
+                // Runpod stock changes constantly; rejecting every other
+                // compatible GPU can leave durable jobs stuck at 5-6% even
+                // while suitable CUDA machines are available.
+                if (!$this->isCompatibleNvidiaGpu($id, $displayName)) {
                     continue;
                 }
 
@@ -131,6 +137,10 @@ class RunpodGpuMarketplaceService
                 }
 
                 $hourlyRate = (float)$uninterruptablePrice;
+                if ($hourlyRate > $this->maxHourlyCost()) {
+                    continue;
+                }
+
                 $options[] = [
                     'gpuTypeId' => $id,
                     'gpuName' => $displayName !== '' ? $displayName : $id,
@@ -143,18 +153,30 @@ class RunpodGpuMarketplaceService
                     'availableGpuCounts' => $lowestPrice['availableGpuCounts'] ?? null,
                     'secureCloud' => $secureCloud,
                     'communityCloud' => $communityCloud,
+                    'preferred' => $isPreferred,
                 ];
             }
 
             usort($options, static function (array $left, array $right): int {
                 $leftPrice = (float)($left['pricePerHour'] ?? PHP_FLOAT_MAX);
                 $rightPrice = (float)($right['pricePerHour'] ?? PHP_FLOAT_MAX);
-                return $leftPrice <=> $rightPrice;
+                if ($leftPrice !== $rightPrice) {
+                    return $leftPrice <=> $rightPrice;
+                }
+
+                return ((int)!empty($right['preferred'])) <=> ((int)!empty($left['preferred']));
             });
 
             return $options;
         } catch (\Throwable $e) {
-            error_log('Failed to query GPU marketplace: ' . $e->getMessage());
+            $message = $e->getMessage();
+            if ($this->isRunpodAuthError($message)) {
+                throw new RuntimeException(
+                    'Runpod API key was rejected. Restore the working NUTMEG_RUNPOD_API_KEY in .env before starting AI.'
+                );
+            }
+
+            error_log('Failed to query GPU marketplace: ' . $message);
             return [];
         }
     }
@@ -314,8 +336,17 @@ class RunpodGpuMarketplaceService
             return null;
         }
 
-        $timeoutSeconds = max(15, (int)(getenv('NUTMEG_RUNPOD_ALLOCATION_TIMEOUT_SECONDS') ?: 90));
-        $pollSeconds = max(2, (int)(getenv('NUTMEG_RUNPOD_ALLOCATION_POLL_SECONDS') ?: 5));
+        // This runs during an API/cron retry. Keep each placement attempt
+        // bounded so one unavailable pool cannot hold a PHP request open for
+        // several minutes; subsequent status polls will retry automatically.
+        $timeoutSeconds = min(
+            90,
+            max(10, (int)(getenv('NUTMEG_RUNPOD_ALLOCATION_TIMEOUT_SECONDS') ?: 20))
+        );
+        $pollSeconds = min(
+            5,
+            max(2, (int)(getenv('NUTMEG_RUNPOD_ALLOCATION_POLL_SECONDS') ?: 4))
+        );
         $deadline = time() + $timeoutSeconds;
 
         do {
@@ -447,15 +478,47 @@ class RunpodGpuMarketplaceService
         return $values !== [] ? $values : self::DEFAULT_PREFERRED_GPU_IDS;
     }
 
+    private function isCompatibleNvidiaGpu(string $id, string $displayName): bool
+    {
+        $name = strtolower(trim($id . ' ' . $displayName));
+        if ($name === '' || !str_contains($name, 'nvidia')) {
+            return false;
+        }
+
+        // The current worker uses CUDA/PyTorch and cannot run on AMD pools.
+        // CPU-only and legacy display adapters are excluded defensively.
+        foreach (['cpu', 'grid', 'virtual', 'display'] as $unsupported) {
+            if (str_contains($name, $unsupported)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private function minMemoryGb(): int
     {
         $value = (int)(getenv('NUTMEG_RUNPOD_MIN_GPU_MEMORY_GB') ?: self::DEFAULT_MIN_MEMORY_GB);
         return $value > 0 ? $value : self::DEFAULT_MIN_MEMORY_GB;
     }
 
+    private function maxHourlyCost(): float
+    {
+        $raw = trim((string)(getenv('NUTMEG_RUNPOD_MAX_HOURLY_COST') ?: ''));
+        if ($raw !== '' && is_numeric($raw)) {
+            $value = (float)$raw;
+            return $value > 0.0 ? $value : self::DEFAULT_MAX_HOURLY_COST;
+        }
+
+        return self::DEFAULT_MAX_HOURLY_COST;
+    }
+
     private function secureCloudOnly(): bool
     {
-        $raw = strtolower(trim((string)(getenv('NUTMEG_RUNPOD_MARKETPLACE_SECURE_CLOUD') ?: '1')));
+        $configured = getenv('NUTMEG_RUNPOD_MARKETPLACE_SECURE_CLOUD');
+        $raw = $configured === false || trim((string)$configured) === ''
+            ? '1'
+            : strtolower(trim((string)$configured));
         return !in_array($raw, ['0', 'false', 'no', 'off'], true);
     }
 
@@ -680,7 +743,7 @@ class RunpodGpuMarketplaceService
         }
 
         return [
-            'set -euo pipefail; if [ -z "${NUTMEG_AI_BUNDLE_URL:-}" ]; then echo "NUTMEG_AI_BUNDLE_URL is not configured" >&2; exit 1; fi; if ! getent hosts strddrjneurylxoolimj.supabase.co >/dev/null 2>&1; then printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\noptions timeout:2 attempts:3\n" >/etc/resolv.conf || true; fi; APP_DIR=/workspace/nutmeg-ai; VERSION=${NUTMEG_AI_BOOTSTRAP_VERSION:-20260424c}; if [ ! -f "$APP_DIR/.bundle-version-$VERSION" ]; then rm -rf "$APP_DIR"; mkdir -p "$APP_DIR"; for attempt in 1 2 3 4 5; do if curl -4 -fsSL "$NUTMEG_AI_BUNDLE_URL" -o /tmp/nutmeg-ai-template.tgz; then break; fi; sleep 3; done; test -f /tmp/nutmeg-ai-template.tgz; tar --no-same-owner -xzf /tmp/nutmeg-ai-template.tgz -C "$APP_DIR"; rm -f "$APP_DIR"/.bundle-version-*; touch "$APP_DIR/.bundle-version-$VERSION"; fi; REQUIREMENTS_FILE="$APP_DIR/requirements-runpod.txt"; if [ ! -f "$REQUIREMENTS_FILE" ]; then REQUIREMENTS_FILE="$APP_DIR/requirements.txt"; fi; if ! python3 -c "import uvicorn, fastapi, multipart, ultralytics, cv2, scipy, filterpy" >/dev/null 2>&1; then for attempt in 1 2 3; do python3 -m pip install --no-cache-dir -r "$REQUIREMENTS_FILE" && break; sleep 5; done; fi; chmod +x "$APP_DIR/start-fastapi.sh"; exec "$APP_DIR/start-fastapi.sh"',
+            'set -euo pipefail; if [ -z "${NUTMEG_AI_BUNDLE_URL:-}" ]; then echo "NUTMEG_AI_BUNDLE_URL is not configured" >&2; exit 1; fi; if ! getent hosts strddrjneurylxoolimj.supabase.co >/dev/null 2>&1; then printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\noptions timeout:2 attempts:3\n" >/etc/resolv.conf || true; fi; APP_DIR=/workspace/nutmeg-ai; VERSION=${NUTMEG_AI_BOOTSTRAP_VERSION:-20260424c}; if [ ! -f "$APP_DIR/.bundle-version-$VERSION" ]; then rm -rf "$APP_DIR"; mkdir -p "$APP_DIR"; for attempt in 1 2 3 4 5; do if curl -4 -fsSL "$NUTMEG_AI_BUNDLE_URL" -o /tmp/nutmeg-ai-template.tgz; then break; fi; sleep 3; done; test -f /tmp/nutmeg-ai-template.tgz; tar --no-same-owner -xzf /tmp/nutmeg-ai-template.tgz -C "$APP_DIR"; if [ ! -f "$APP_DIR/start-fastapi.sh" ] && [ -f "$APP_DIR/ai/start-fastapi.sh" ]; then find "$APP_DIR/ai" -mindepth 1 -maxdepth 1 -exec mv -t "$APP_DIR" {} +; rmdir "$APP_DIR/ai" || true; fi; rm -f "$APP_DIR"/.bundle-version-*; touch "$APP_DIR/.bundle-version-$VERSION"; fi; REQUIREMENTS_FILE="$APP_DIR/requirements-runpod.txt"; if [ ! -f "$REQUIREMENTS_FILE" ]; then REQUIREMENTS_FILE="$APP_DIR/requirements.txt"; fi; if ! command -v ffmpeg >/dev/null 2>&1; then export DEBIAN_FRONTEND=noninteractive; apt-get update -y && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*; fi; if ! python3 -c "import uvicorn, fastapi, multipart, ultralytics, cv2, scipy, filterpy" >/dev/null 2>&1; then for attempt in 1 2 3; do python3 -m pip install --no-cache-dir -r "$REQUIREMENTS_FILE" && break; sleep 5; done; fi; chmod +x "$APP_DIR/start-fastapi.sh"; exec "$APP_DIR/start-fastapi.sh"',
         ];
     }
 
@@ -903,6 +966,16 @@ class RunpodGpuMarketplaceService
     {
         $raw = strtolower(trim((string)(getenv('NUTMEG_RUNPOD_VERIFY_SSL') ?: getenv('NUTMEG_AI_FASTAPI_VERIFY_SSL') ?: '1')));
         return !in_array($raw, ['0', 'false', 'no', 'off'], true);
+    }
+
+    private function isRunpodAuthError(string $message): bool
+    {
+        $normalized = strtolower($message);
+        return str_contains($normalized, 'http 401')
+            || str_contains($normalized, 'http 403')
+            || str_contains($normalized, 'unauthorized')
+            || str_contains($normalized, 'forbidden')
+            || str_contains($normalized, 'invalid api key');
     }
 
     private function isTlsCertificateError(string $error): bool

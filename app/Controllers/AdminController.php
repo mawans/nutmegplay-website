@@ -12,6 +12,7 @@ use App\Services\MatchStatsService;
 use App\Services\AnnouncementService;
 use App\Services\NotificationService;
 use App\Services\VideoAnalysisService;
+use App\Services\B2VideoStorageService;
 
 class AdminController extends Controller
 {
@@ -157,7 +158,7 @@ class AdminController extends Controller
 
         // Notification: user created
         if ($uid) {
-            $this->notify($uid, NotificationService::TYPE_USER_CREATED, 'Welcome to Nutmeg!', "Your account has been created as {$role}. Welcome aboard!", 'person_add', '/dashboard');
+            $this->notify($uid, NotificationService::TYPE_USER_CREATED, 'Welcome to FiveStats!', "Your account has been created as {$role}. Welcome aboard!", 'person_add', '/dashboard');
         }
 
         Auth::flash('success', "User '{$fname}' created successfully as {$role}.");
@@ -380,7 +381,9 @@ class AdminController extends Controller
 
         $matches = new MatchService();
         $match = $matches->getById($matchId);
-        $canQueueAi = $this->isWebsiteHostedVideoUrl($videoUrl) || $this->isAiStoredVideoUrl($videoUrl);
+        $canQueueAi = $this->isWebsiteHostedVideoUrl($videoUrl)
+            || $this->isAiStoredVideoUrl($videoUrl)
+            || $this->isB2StoredVideoUrl($videoUrl);
         $sourceType = $this->adminVideoSourceType($videoUrl);
         $result = $matches->update($matchId, [
             'video_url'    => $videoUrl,
@@ -545,6 +548,10 @@ class AdminController extends Controller
 
     private function adminVideoSourceType(string $videoUrl): string
     {
+        if ($this->isB2StoredVideoUrl($videoUrl)) {
+            return 'b2_storage';
+        }
+
         if ($this->isWebsiteHostedVideoUrl($videoUrl)) {
             return 'local_upload';
         }
@@ -554,6 +561,12 @@ class AdminController extends Controller
         }
 
         return 'external_url';
+    }
+
+    private function isB2StoredVideoUrl(string $videoUrl): bool
+    {
+        return B2VideoStorageService::isConfigured()
+            && (new B2VideoStorageService())->isManagedUrl($videoUrl);
     }
 
     private function isWebsiteHostedVideoUrl(string $videoUrl): bool

@@ -93,7 +93,20 @@ class RunpodActivePodService
             return $activePod;
         }
 
+        $provisionLock = $this->acquireProvisioningLock();
+        if (!is_resource($provisionLock)) {
+            return $this->waitForConcurrentProvisioning();
+        }
+
         try {
+            // Another request may have completed provisioning between our
+            // first cache read and acquiring the filesystem lock.
+            $activePod = $this->getActivePod(true);
+            if (is_array($activePod) && trim((string)($activePod['pod_id'] ?? '')) !== '') {
+                return $activePod;
+            }
+
+            try {
             $marketplace = new RunpodGpuMarketplaceService();
             $marketplace->cleanupNutmegPods();
             $gpuOptions = $marketplace->findAvailableGpuOptions();
@@ -104,7 +117,10 @@ class RunpodActivePodService
 
             $selectedGpu = null;
             $newPodId = null;
-            $maxAttempts = max(1, (int)(getenv('NUTMEG_RUNPOD_MAX_PROVISION_ATTEMPTS') ?: 3));
+            $maxAttempts = min(
+                10,
+                max(1, (int)(getenv('NUTMEG_RUNPOD_MAX_PROVISION_ATTEMPTS') ?: 3))
+            );
             $attempts = 0;
 
             // Let Runpod choose from all compatible types using its live
@@ -115,7 +131,8 @@ class RunpodActivePodService
                 static fn(array $option): string => trim((string)($option['gpuTypeId'] ?? '')),
                 array_filter($gpuOptions, 'is_array')
             )));
-            if ($candidateGpuIds !== []) {
+            if ($candidateGpuIds !== [] && $attempts < $maxAttempts) {
+                $attempts++;
                 $candidatePodId = $marketplace->rentGpuPod($candidateGpuIds, 1);
                 if (is_string($candidatePodId) && trim($candidatePodId) !== '') {
                     $allocatedPod = $marketplace->waitForPodAllocation($candidatePodId);
@@ -192,9 +209,17 @@ class RunpodActivePodService
             $this->rememberActivePod($record);
             $this->cleanupExtraPods($newPodId);
             return $record;
-        } catch (\Throwable $e) {
-            error_log('Failed to rent new pod: ' . $e->getMessage());
-            return null;
+            } catch (\Throwable $e) {
+                $message = $e->getMessage();
+                error_log('Failed to rent new pod: ' . $message);
+                if ($this->isFatalProvisioningError($message)) {
+                    throw $e;
+                }
+                return null;
+            }
+        } finally {
+            flock($provisionLock, LOCK_UN);
+            fclose($provisionLock);
         }
     }
 
@@ -472,6 +497,17 @@ class RunpodActivePodService
         }
     }
 
+    private function isFatalProvisioningError(string $message): bool
+    {
+        $normalized = strtolower($message);
+        return str_contains($normalized, 'api key')
+            || str_contains($normalized, 'http 401')
+            || str_contains($normalized, 'http 403')
+            || str_contains($normalized, 'unauthorized')
+            || str_contains($normalized, 'forbidden')
+            || str_contains($normalized, 'not configured');
+    }
+
     private function shouldTrackDiscoveredPod(array $pod, ?string $excludePodId = null): bool
     {
         $podId = trim((string)($pod['id'] ?? ''));
@@ -584,6 +620,39 @@ class RunpodActivePodService
     {
         $value = trim((string)(getenv('NUTMEG_RUNPOD_DYNAMIC_NAME_PREFIX') ?: 'nutmeg-ai'));
         return $value !== '' ? $value : 'nutmeg-ai';
+    }
+
+    private function acquireProvisioningLock()
+    {
+        $lockDir = BASE_PATH . '/storage/locks/runpod';
+        if (!is_dir($lockDir)) {
+            @mkdir($lockDir, 0775, true);
+        }
+
+        $handle = @fopen($lockDir . '/provision.lock', 'c+');
+        if (!is_resource($handle)) {
+            return null;
+        }
+
+        if (!flock($handle, LOCK_EX | LOCK_NB)) {
+            fclose($handle);
+            return null;
+        }
+
+        return $handle;
+    }
+
+    private function waitForConcurrentProvisioning(): ?array
+    {
+        for ($attempt = 0; $attempt < 6; $attempt++) {
+            sleep(2);
+            $activePod = $this->getActivePod(true);
+            if (is_array($activePod) && trim((string)($activePod['pod_id'] ?? '')) !== '') {
+                return $activePod;
+            }
+        }
+
+        return null;
     }
 
     private function firstNonEmptyString(array $candidates): string

@@ -1,8 +1,21 @@
 Options -Indexes
 DirectoryIndex index.php
 
+<FilesMatch "^\.env">
+    Require all denied
+</FilesMatch>
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
+
+    # Application internals and maintenance scripts must never be executed
+    # directly over HTTP. Cron invokes scripts with the PHP CLI binary.
+    RewriteRule ^(?:app|database|scripts|storage|ops)(?:/|$) - [F,L,NC]
+
+    # Shared hosting / LiteSpeed can drop the Authorization header before PHP
+    # sees it. Preserve it so mobile Bearer tokens reach ApiAuth.
+    RewriteCond %{HTTP:Authorization} ^(.+)$
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%1]
 
     # Serve public assets while keeping index.php as the application router.
     RewriteCond %{DOCUMENT_ROOT}/public/$1/$2 -f

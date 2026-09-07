@@ -60,7 +60,11 @@ class AuthController extends Controller
     {
         $error = Auth::getFlash('error');
         $success = Auth::getFlash('success');
-        $this->renderRaw(BASE_PATH . '/app/views/auth/reset-password.php', compact('error', 'success'));
+        $resetAccessToken = Auth::getFlash('reset_access_token');
+        $this->renderRaw(
+            BASE_PATH . '/app/views/auth/reset-password.php',
+            compact('error', 'success', 'resetAccessToken')
+        );
     }
 
     /** POST /login */
@@ -150,7 +154,12 @@ class AuthController extends Controller
 
         try {
             $sb = SupabaseClient::getInstance();
-            $authResult = $sb->authSignUp($email, $password, ['fname' => $fname]);
+            $authResult = $sb->authSignUp(
+                $email,
+                $password,
+                ['fname' => $fname],
+                $this->resolveWebsiteUrl('/login')
+            );
         } catch (\Throwable $e) {
             $this->reportException('auth-register', $e);
             Auth::flash('error', 'Authentication service is unavailable right now. Please try again later.');
@@ -265,24 +274,25 @@ class AuthController extends Controller
         }
 
         if (strlen($password) < 8) {
-            Auth::flash('error', 'Password must be at least 8 characters long.');
-            header('Location: /reset-password');
-            exit;
+            $this->redirectToResetPasswordWithError(
+                'Password must be at least 8 characters long.',
+                $accessToken
+            );
         }
 
         if ($password !== $passwordConfirmation) {
-            Auth::flash('error', 'Passwords do not match.');
-            header('Location: /reset-password');
-            exit;
+            $this->redirectToResetPasswordWithError('Passwords do not match.', $accessToken);
         }
 
         try {
             $sb = SupabaseClient::getInstance();
             $result = $sb->authUpdateUserPassword($accessToken, $password);
         } catch (\Throwable $e) {
-            Auth::flash('error', 'Password reset is not configured correctly right now.');
-            header('Location: /reset-password');
-            exit;
+            $this->reportException('auth-reset-password', $e);
+            $this->redirectToResetPasswordWithError(
+                'Password reset is temporarily unavailable. Please try again.',
+                $accessToken
+            );
         }
 
         if (!$result || !empty($result['error'])) {
@@ -294,12 +304,12 @@ class AuthController extends Controller
                 str_contains($message, 'token')
             ) {
                 $friendly = 'This reset link is invalid or expired. Please request a new one.';
+            } elseif (str_contains($message, 'different from the old password')) {
+                $friendly = 'Your new password must be different from your current password.';
             } else {
                 $friendly = 'Password could not be updated right now. Please try again.';
             }
-            Auth::flash('error', $friendly);
-            header('Location: /reset-password');
-            exit;
+            $this->redirectToResetPasswordWithError($friendly, $accessToken);
         }
 
         Auth::logout();
@@ -363,9 +373,24 @@ class AuthController extends Controller
 
     private function resolvePasswordResetUrl(): ?string
     {
+        return $this->resolveWebsiteUrl('/reset-password');
+    }
+
+    private function redirectToResetPasswordWithError(string $message, string $accessToken): never
+    {
+        Auth::flash('error', $message);
+        if ($accessToken !== '') {
+            Auth::flash('reset_access_token', $accessToken);
+        }
+        header('Location: /reset-password');
+        exit;
+    }
+
+    private function resolveWebsiteUrl(string $path): ?string
+    {
         $base = trim((string)(getenv('NUTMEG_WEBSITE_URL') ?: ''));
         if ($base !== '' && !str_contains($base, 'CHANGE_ME')) {
-            return rtrim($base, '/') . '/reset-password';
+            return rtrim($base, '/') . '/' . ltrim($path, '/');
         }
 
         $forwardedProto = trim((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''));
@@ -378,6 +403,6 @@ class AuthController extends Controller
             return null;
         }
 
-        return $scheme . '://' . $host . '/reset-password';
+        return $scheme . '://' . $host . '/' . ltrim($path, '/');
     }
 }

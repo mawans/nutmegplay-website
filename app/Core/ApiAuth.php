@@ -41,7 +41,18 @@ class ApiAuth
     {
         $header = $_SERVER['HTTP_AUTHORIZATION']
             ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
+            ?? $_SERVER['Authorization']
             ?? '';
+
+        if (!$header && function_exists('getallheaders')) {
+            $headers = getallheaders();
+            foreach ($headers as $name => $value) {
+                if (strtolower((string) $name) === 'authorization') {
+                    $header = (string) $value;
+                    break;
+                }
+            }
+        }
 
         if (preg_match('/^Bearer\s+(.+)$/i', $header, $matches)) {
             return $matches[1];

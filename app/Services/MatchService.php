@@ -22,6 +22,25 @@ class MatchService
         return ($row && empty($row['error'])) ? $row : null;
     }
 
+    /** @param array<int, int> $ids */
+    public function getByIds(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map(
+            static fn(mixed $id): int => (int)$id,
+            $ids
+        ), static fn(int $id): bool => $id > 0)));
+
+        if ($ids === []) {
+            return [];
+        }
+
+        $rows = $this->db->from('matchs')->select('*')
+            ->filter('id', 'in', '(' . implode(',', $ids) . ')')
+            ->execute();
+
+        return ($rows && empty($rows['error']) && is_array($rows)) ? $rows : [];
+    }
+
     /** All matches ordered by date descending */
     public function list(int $limit = 50): array
     {

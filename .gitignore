@@ -38,3 +38,12 @@ Thumbs.db
 # Temporary files
 tmp/
 temp/
+
+# Runtime and user-generated data
+public/videos/
+storage/ai-output/
+storage/ai-progress/
+storage/cache/
+storage/locks/
+storage/logs/
+storage/runtime-cache/

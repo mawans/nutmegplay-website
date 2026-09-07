@@ -1,4 +1,4 @@
--- NutmegPlay production compatibility migration
+-- FiveStats production compatibility migration
 --
 -- Purpose:
 -- - Safely align an older/live production schema with the current PHP app

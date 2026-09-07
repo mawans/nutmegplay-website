@@ -87,8 +87,7 @@ require_once BASE_PATH . '/includes/sidenav.php';
                         <div
                             class="bg-white dark:bg-card-dark border border-slate-200 dark:border-[#264531] p-5 rounded-lg hover:border-primary/30 transition-all">
                             <div class="flex items-center gap-2 text-muted mb-1">
-                                <span class="material-symbols-outlined text-primary"
-                                    style="font-size:20px">sports_soccer</span>
+                                <img src="/public/assets/fivestats-logo.png" alt="" class="size-5 rounded-md">
                                 <span class="text-xs font-medium">Total Matches</span>
                             </div>
                             <p class="text-2xl font-bold"><?= $totalMatches ?></p>
@@ -123,7 +122,7 @@ require_once BASE_PATH . '/includes/sidenav.php';
                         </button>
                         <button onclick="switchTab('matches')" data-tab="matches"
                             class="admin-tab-btn inline-flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 border-transparent text-muted hover:text-white hover:border-primary/50 transition-all">
-                            <span class="material-symbols-outlined text-sm">sports_soccer</span> Match Approval
+                            <img src="/public/assets/fivestats-logo.png" alt="" class="size-4 rounded"> Match Approval
                         </button>
                         <button onclick="switchTab('registrations')" data-tab="registrations"
                             class="admin-tab-btn inline-flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 border-transparent text-muted hover:text-white hover:border-primary/50 transition-all">
@@ -396,7 +395,7 @@ require_once BASE_PATH . '/includes/sidenav.php';
                                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                     <div class="flex-1">
                                         <div class="flex items-center gap-3 mb-2">
-                                            <span class="material-symbols-outlined text-warning">sports_soccer</span>
+                                            <img src="/public/assets/fivestats-logo.png" alt="" class="size-5 rounded-md">
                                             <h4 class="font-bold">
                                                 <?= htmlspecialchars(($pm['challanger'] ?? 'TBD') . ' vs ' . ($pm['opponent'] ?? 'TBD')) ?>
                                             </h4>
@@ -1271,7 +1270,7 @@ $matchesWithoutVideo = array_filter($allMatches, fn($m) => empty($m['video_url']
 
 <!-- Footer -->
 <footer class="ml-0 md:ml-64 text-center py-4 border-t border-slate-200 dark:border-[#264531]">
-    <p class="text-xs text-muted">Nutmeg Admin Panel v1.0 · © 2026 NutmegPlay</p>
+    <p class="text-xs text-muted">FiveStats Admin Panel v1.0 · © 2026 FiveStats</p>
 </footer>
 
 </div>

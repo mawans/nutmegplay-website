@@ -23,7 +23,7 @@ if (is_file($compiledCssPath)) {
     <main class="min-h-screen flex items-center justify-center px-6">
         <section class="w-full max-w-xl rounded-3xl border border-white/10 bg-white/5 p-10 shadow-2xl shadow-black/30">
             <p class="text-sm font-semibold uppercase tracking-[0.25em] text-[#7ddf95]">
-                NutmegPlay
+                FiveStats
             </p>
             <h1 class="mt-4 text-4xl font-black">
                 <?= htmlspecialchars((string)($statusCode ?? 500)) ?>

@@ -88,7 +88,7 @@ class WeeklyChallengesService
 
         try {
             $result = $this->sb->from('challenge_participation')
-                ->select('id, user_id, current_progress, position_rank, is_winner, accounts!inner(fname, lname, email)')
+                ->select('id, user_id, current_progress, position_rank, is_winner')
                 ->eq('challenge_id', (string)$challengeId)
                 ->eq('week_start_date', $weekStartDate)
                 ->filter('status', 'in', '(in_progress,completed)')
@@ -97,23 +97,54 @@ class WeeklyChallengesService
                 ->limit(100)
                 ->execute();
 
-            if (!$result) {
+            if (
+                !is_array($result)
+                || isset($result['error'])
+                || !array_is_list($result)
+            ) {
                 return [];
+            }
+
+            $userIds = array_values(array_unique(array_filter(array_map(
+                static fn($entry) => is_array($entry)
+                    ? (string)($entry['user_id'] ?? '')
+                    : '',
+                $result
+            ))));
+            $accountsById = [];
+            if ($userIds !== []) {
+                $accounts = $this->sb->from('accounts')
+                    ->select('uid, fname, lname, email')
+                    ->filter('uid', 'in', '(' . implode(',', $userIds) . ')')
+                    ->execute();
+
+                if (is_array($accounts) && !isset($accounts['error']) && array_is_list($accounts)) {
+                    foreach ($accounts as $account) {
+                        if (is_array($account) && !empty($account['uid'])) {
+                            $accountsById[(string)$account['uid']] = $account;
+                        }
+                    }
+                }
             }
 
             // Reformat response to flatten account data and add rank
             $leaderboard = [];
-            foreach ($result as $idx => $entry) {
+            foreach ($result as $entry) {
+                if (!is_array($entry)) {
+                    continue;
+                }
+
+                $account = $accountsById[(string)($entry['user_id'] ?? '')] ?? [];
                 $leaderboard[] = [
-                    'id' => $entry['id'],
-                    'user_id' => $entry['user_id'],
-                    'current_progress' => $entry['current_progress'],
-                    'position_rank' => $entry['position_rank'],
-                    'is_winner' => $entry['is_winner'],
-                    'rank' => $idx + 1,
-                    'fname' => $entry['accounts']['fname'] ?? 'Unknown',
-                    'lname' => $entry['accounts']['lname'] ?? '',
-                    'email' => $entry['accounts']['email'] ?? '',
+                    'id' => $entry['id'] ?? null,
+                    'user_id' => $entry['user_id'] ?? null,
+                    'current_progress' => $entry['current_progress'] ?? 0,
+                    'position_rank' => $entry['position_rank'] ?? null,
+                    'is_winner' => (bool)($entry['is_winner'] ?? false),
+                    'rank' => count($leaderboard) + 1,
+                    'fname' => $account['fname'] ?? 'Unknown',
+                    'lname' => $account['lname'] ?? '',
+                    'email' => $account['email'] ?? '',
                 ];
             }
             return $leaderboard;

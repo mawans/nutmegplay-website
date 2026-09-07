@@ -17,6 +17,7 @@ use App\Controllers\{
     NotificationController,
     ProfileController,
     ApiController,
+    PublicPageController,
     WeeklyChallengesController
 };
 
@@ -38,6 +39,11 @@ $router->post('/logout', [AuthController::class, 'logout']);
 // ─── Landing page (public) ────────────────────────────────
 $router->get('/', [LandingController::class, 'index']);
 $router->get('/landing', [LandingController::class, 'index']);
+$router->get('/about', [PublicPageController::class, 'about']);
+$router->get('/privacy', [PublicPageController::class, 'privacy']);
+$router->get('/terms', [PublicPageController::class, 'terms']);
+$router->get('/contact', [PublicPageController::class, 'contact']);
+$router->get('/support', [PublicPageController::class, 'support']);
 
 // ─── Dashboard routes (GET) ──────────────────────────────
 $router->get('/dashboard', [HomeController::class, 'dashboard']);
@@ -102,6 +108,7 @@ $router->post('/admin/challenge/toggle', [AdminController::class, 'toggleChallen
 // Auth
 $router->post('/api/auth/login',       [ApiController::class, 'login']);
 $router->post('/api/auth/register',    [ApiController::class, 'register']);
+$router->post('/api/account/delete',   [ApiController::class, 'deleteAccount']);
 
 // Dashboard
 $router->get('/api/dashboard',         [ApiController::class, 'dashboard']);
@@ -112,11 +119,13 @@ $router->post('/api/profile',          [ApiController::class, 'updateProfile']);
 
 // Player Stats (real data for playercard)
 $router->get('/api/player/stats',      [ApiController::class, 'playerStats']);
+$router->get('/api/player/analysis-stats', [ApiController::class, 'playerAnalysisStats']);
 
 // Matches
 $router->get('/api/matches',           [ApiController::class, 'matches']);
 $router->get('/api/matches/pending',   [ApiController::class, 'matchesPending']);
 $router->get('/api/matches/history',   [ApiController::class, 'matchHistory']);
+$router->get('/api/videos/library',    [ApiController::class, 'videoLibrary']);
 $router->post('/api/matches/create',   [ApiController::class, 'createMatch']);
 $router->post('/api/matches/respond',  [ApiController::class, 'respondMatch']);
 $router->post('/api/matches/stats',    [ApiController::class, 'recordMatchStats']);
@@ -124,6 +133,9 @@ $router->post('/api/video-analysis/request', [ApiController::class, 'requestVide
 $router->post('/api/video-analysis/kick',    [ApiController::class, 'kickVideoAnalysis']);
 $router->post('/api/video-analysis/stop',    [ApiController::class, 'stopVideoAnalysis']);
 $router->get('/api/video-analysis/status',   [ApiController::class, 'videoAnalysisStatus']);
+$router->post('/api/credits/checkout',       [ApiController::class, 'createCreditCheckout']);
+$router->post('/api/credits/confirm',        [ApiController::class, 'confirmCreditCheckout']);
+$router->post('/api/stripe/webhook',         [ApiController::class, 'stripeWebhook']);
 
 // Clubs
 $router->get('/api/clubs',             [ApiController::class, 'clubs']);

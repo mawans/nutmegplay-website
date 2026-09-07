@@ -141,7 +141,7 @@ if (empty($userTotals)) {
 <section class="grid grid-cols-2 gap-4 md:grid-cols-4 mb-6">
 <div class="flex flex-col items-start gap-2 rounded-xl border border-slate-200 bg-white p-4 md:p-5 shadow-sm hover:shadow-md transition-shadow dark:border-white/10 dark:bg-surface-dark hover:border-primary/30 dark:hover:border-primary/30">
 <div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-primary text-[20px]">sports_soccer</span>
+<img src="/public/assets/fivestats-logo.png" alt="" class="size-5 rounded-md">
 <span class="text-sm font-medium text-muted">Matches</span>
 </div>
 <p class="text-2xl md:text-3xl font-bold tracking-tight dark:text-white"><?= max((int)($userTotals['matches'] ?? 0), (int)($aiTotals['matches'] ?? 0)) ?></p>
@@ -317,7 +317,7 @@ $recentScoreAway = (int)($m['score_away'] ?? ($m['score_opponent'] ?? 0));
 </div>
 </section>
 <footer class="mt-8 pb-8 text-center text-xs md:text-sm text-muted">
-© 2026 NutmegPlay. All rights reserved.
+© 2026 FiveStats. All rights reserved.
 </footer>
 </div>
 </div>

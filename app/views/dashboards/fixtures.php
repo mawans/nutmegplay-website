@@ -99,7 +99,7 @@ require_once BASE_PATH . '/includes/sidenav.php';
 </div>
 <?php else: ?>
 <div class="bg-white dark:bg-card-dark rounded-xl p-12 text-center border border-slate-200 dark:border-[#264531]">
-<span class="material-symbols-outlined text-5xl text-muted mb-3 block">sports_soccer</span>
+<img src="/public/assets/fivestats-logo.png" alt="" class="size-14 rounded-xl mx-auto mb-3 opacity-70">
 <h3 class="text-lg font-bold mb-2">No Fixtures Scheduled</h3>
 <?php if ($canManageMatchmaking): ?>
 <p class="text-muted text-sm mb-4">Head to the matchmaking page to schedule and review challenges.</p>

@@ -434,6 +434,16 @@ select.lineup-select option {
                 default => 'video/mp4',
             };
         }
+    } elseif ($displayVideoUrl !== '' && $isSafeExternal) {
+        $showVideoPreview = true;
+        $ext = strtolower((string)pathinfo((string)parse_url($displayVideoUrl, PHP_URL_PATH), PATHINFO_EXTENSION));
+        $videoMime = match ($ext) {
+            'webm' => 'video/webm',
+            'mov'  => 'video/quicktime',
+            'avi'  => 'video/x-msvideo',
+            'mkv'  => 'video/x-matroska',
+            default => 'video/mp4',
+        };
     }
 
     $hasAnyStats = !empty(($stats['blue'] ?? [])) || !empty(($stats['red'] ?? []));
@@ -1471,28 +1481,7 @@ select.lineup-select option {
             return;
         }
 
-        if (wantsAi) {
-            const selectedCard = document.querySelector('[data-match-card][data-match-id="' + selectedMatchId + '"]');
-            if (selectedCard) {
-                const lineupInputs = Array.from(selectedCard.querySelectorAll('input[name^="slots["][name$="[player_uid]"]'));
-                if (lineupInputs.length > 0) {
-                    const hasAssignedPlayer = lineupInputs.some((el) => String(el.value || '').trim() !== '');
-                    if (!hasAssignedPlayer) {
-                        setUploadProgress(0, 'Assign at least one player to a jersey below, then click Run AI again.', 'Lineup Required');
-                        selectedCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        const firstTrigger = selectedCard.querySelector('[data-search-trigger]');
-                        if (firstTrigger) firstTrigger.focus();
-                        return;
-                    }
-                }
-            }
-        }
-
         if (!selectedFile) {
-            if (selectedMode === 'stored' && storedVideoHidden && storedVideoHidden.value.trim() && wantsAi && aiWorkerPanel && aiWorkerState !== 'ready') {
-                setUploadProgress(0, 'Start the AI worker and wait for Running/Ready before running AI.', 'AI Worker Required');
-                return;
-            }
             if (selectedMode === 'upload') {
                 setUploadProgress(0, 'Choose a saved video or use Upload a Video first.', 'Video Required');
                 return;
@@ -1504,11 +1493,6 @@ select.lineup-select option {
                 uploadSubmitLabel.textContent = wantsAi ? 'Running AI...' : 'Saving...';
             }
         } else {
-            if (wantsAi && aiWorkerPanel && aiWorkerState !== 'ready') {
-                setUploadProgress(0, 'Start the AI worker and wait for Running/Ready before uploading.', 'AI Worker Required');
-                return;
-            }
-
             submitButton.disabled = true;
             submitButton.classList.add('opacity-70', 'cursor-not-allowed');
             if (uploadSubmitLabel) {
@@ -1557,12 +1541,8 @@ select.lineup-select option {
         showCancelButton();
         armStallWatch();
 
-        // Two-stage flow:
-        //  Stage 1 (run_ai=0): pick a file -> auto-save it on the server
-        //                       so we have a stored clip and a URL.
-        //  Stage 2 (run_ai=1): user clicks Run AI on the saved clip -> the
-        //                       analysis is queued and the page reloads to
-        //                       the live progress view.
+        // Legacy deployments used a save-then-run two-stage flow. New uploads
+        // always arrive with run_ai=1 and are queued immediately on the server.
         const isStageOne = wantsAi === false;
 
         // Stage 2 has no real upload (tiny POST body), so the stall watcher
@@ -1977,9 +1957,7 @@ select.lineup-select option {
                 videoSourceMode.value = 'upload';
             }
 
-            // Stage 1: just save the file on the server. No AI yet — that's
-            // what the Run AI button is for once the upload finishes.
-            if (runAiInput) runAiInput.value = '0';
+            if (runAiInput) runAiInput.value = '1';
             startUploadSubmission();
         });
     }

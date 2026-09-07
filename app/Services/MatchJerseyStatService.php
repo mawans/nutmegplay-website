@@ -52,6 +52,24 @@ class MatchJerseyStatService
         return $this->create($data);
     }
 
+    public function assignPlayerToJersey(
+        int|string $matchId,
+        int $jerseyNumber,
+        string $playerUid,
+        string $playerName
+    ): ?array {
+        $existing = $this->getByMatchAndNumber($matchId, $jerseyNumber);
+        if (!$existing || empty($existing['id'])) {
+            return null;
+        }
+
+        return $this->update((string)$existing['id'], [
+            'player_uid' => $playerUid,
+            'player_name' => $playerName,
+            'updated_at' => gmdate('c'),
+        ]);
+    }
+
     public function deleteByMatch(int|string $matchId): bool
     {
         $result = $this->db->from('match_jersey_stats')
@@ -199,7 +217,56 @@ class MatchJerseyStatService
         }
 
         $result = $this->db->from('match_jersey_stats')->insert($rows);
-        return ($result && empty($result['error'])) ? $result : [];
+        if ($result && empty($result['error'])) {
+            return $result;
+        }
+
+        $message = strtolower((string)($result['message'] ?? ''));
+        if (
+            str_contains($message, 'column') ||
+            str_contains($message, 'schema cache') ||
+            str_contains($message, 'could not find')
+        ) {
+            error_log('[match-jersey-stats] insert failed, retrying with compatibility columns: ' . ($result['message'] ?? 'unknown error'));
+            $compatRows = array_map([$this, 'compatibilityRow'], $rows);
+            $fallback = $this->db->from('match_jersey_stats')->insert($compatRows);
+            return ($fallback && empty($fallback['error'])) ? $fallback : [];
+        }
+
+        if ($result && !empty($result['message'])) {
+            error_log('[match-jersey-stats] insert failed: ' . $result['message']);
+        }
+
+        return [];
+    }
+
+    private function compatibilityRow(array $row): array
+    {
+        $allowed = [
+            'match_id',
+            'team_color',
+            'jersey_number',
+            'player_uid',
+            'player_name',
+            'goals',
+            'assists',
+            'distance_meters',
+            'sprints',
+            'successful_passes',
+            'passes_attempted',
+            'successful_dribbles',
+            'dribbles_attempted',
+            'interceptions',
+            'duels_won',
+            'minutes_played',
+            'clean_sheet',
+            'match_winning_goal',
+            'team_win_streak',
+            'result',
+            'updated_at',
+        ];
+
+        return array_intersect_key($row, array_flip($allowed));
     }
 
     private function update(string $id, array $data): ?array

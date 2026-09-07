@@ -15,6 +15,11 @@ class EventsController extends Controller
     /** GET /matchmaking */
     public function matchmaking(): void
     {
+        if (!Auth::check()) {
+            (new PublicPageController())->matchmaking();
+            return;
+        }
+
         Auth::requirePermission('matchmaking.manage', 'Only instructors and admins can schedule matches.');
 
         $clubs   = new ClubService();

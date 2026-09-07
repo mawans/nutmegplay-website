@@ -93,7 +93,10 @@ So the clean production path is:
 2. upload the website zip to PHP/shared hosting
 3. package and deploy the Nutmeg AI worker to Runpod
 4. point `NUTMEG_AI_FASTAPI_URL` at the Runpod proxy endpoint
-5. let the website store videos and let the AI download them by URL
+5. let the website store new videos in Backblaze B2 and let the AI download them by URL
+
+Backblaze B2 is the exclusive video storage provider when
+`NUTMEG_VIDEO_STORAGE=b2`.
 
 If you want the shortest possible checklist, use only these three files:
 

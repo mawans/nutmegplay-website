@@ -125,14 +125,14 @@ The current production shape is:
 - website on PHP/shared hosting
 - AI on a Runpod pod
 - Supabase for auth and database
-- uploaded match videos stored on the website in `public/videos/`
-- AI downloads the website-hosted video by URL when processing starts
+- new match videos stored in Backblaze B2 (`foot-videos`)
+- AI downloads the B2 object URL when processing starts
 
 Before using this flow, make sure you:
 
 1. Apply [database/migrations/50-prod-schema-compat.sql](database/migrations/50-prod-schema-compat.sql) if production already has existing data.
 2. Set the real Supabase and Runpod/AI values in `.env`.
-3. Keep `NUTMEG_WEBSITE_URL` accurate, because the AI pod downloads videos from that public URL.
+3. Configure the `NUTMEG_B2_*` variables in `.env`; never expose them to the mobile app.
 4. On shared hosting, set `NUTMEG_AI_AUTO_PROCESS=0` and run the queue worker from cron.
 5. Add the daily cleanup cron for `scripts/cleanup-hosted-videos.php`.
 6. See [DEPLOY_SPLIT_HOSTING.md](DEPLOY_SPLIT_HOSTING.md) for the production checklist.

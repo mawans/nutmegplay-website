@@ -46,6 +46,13 @@ if ($phpBin === '') {
 
 $lines = [
     [
+        'desc'    => 'New video scanner (every minute) — REQUIRED',
+        'minute'  => '*',
+        'hour'    => '*',
+        'script'  => 'scripts/scan-new-videos-for-ai.php',
+        'log'     => 'storage/logs/ai/discovery.log',
+    ],
+    [
         'desc'    => 'Queue worker (every minute) — REQUIRED',
         'minute'  => '*',
         'hour'    => '*',

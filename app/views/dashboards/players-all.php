@@ -124,7 +124,7 @@ require_once BASE_PATH . '/includes/sidenav.php';
 </div>
 
 <footer class="mt-8 pb-8 text-center text-xs md:text-sm text-muted">
-© 2026 NutmegPlay. All rights reserved.
+© 2026 FiveStats. All rights reserved.
 </footer>
 
 </div>

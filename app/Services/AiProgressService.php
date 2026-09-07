@@ -53,12 +53,27 @@ class AiProgressService
 
     public function queued(int $matchId): void
     {
-        $this->write($matchId, [
+        $this->queuedStage(
+            $matchId,
+            'queued',
+            5,
+            'Video uploaded. Waiting for the AI worker to pick it up...'
+        );
+    }
+
+    public function queuedStage(
+        int $matchId,
+        string $stage,
+        int $percent,
+        string $message,
+        array $extra = []
+    ): void {
+        $this->write($matchId, array_merge($extra, [
             'status' => 'queued',
-            'stage' => 'queued',
-            'percent' => 5,
-            'message' => 'Video uploaded. Waiting for the AI worker to pick it up...',
-        ]);
+            'stage' => $stage,
+            'percent' => max(0, min(7, $percent)),
+            'message' => $message,
+        ]));
     }
 
     public function processing(int $matchId, string $message = 'AI worker started. Preparing the job...'): void
@@ -95,10 +110,11 @@ class AiProgressService
     public function failed(int $matchId, string $message): void
     {
         $current = $this->read($matchId) ?? [];
+        $lastPercent = isset($current['percent']) ? (int)$current['percent'] : 0;
         $this->write($matchId, array_merge($current, [
             'status' => 'failed',
             'stage' => 'failed',
-            'percent' => 100,
+            'percent' => max(1, min(99, $lastPercent)),
             'message' => $message,
         ]));
     }

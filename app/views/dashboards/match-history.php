@@ -95,7 +95,7 @@ $isSafeVideoUrl = str_starts_with($videoUrl, '/videos/')
 </div>
 <?php else: ?>
 <div class="bg-white dark:bg-card-dark rounded-xl p-8 text-center border border-slate-200 dark:border-[#264531] mb-6">
-<span class="material-symbols-outlined text-5xl text-muted mb-2">sports_soccer</span>
+<img src="/public/assets/fivestats-logo.png" alt="" class="size-14 rounded-xl mx-auto mb-3 opacity-70">
 <p class="text-muted">No match history yet. Play your first match!</p>
 </div>
 <?php endif; ?>

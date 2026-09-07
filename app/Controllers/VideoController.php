@@ -4,6 +4,7 @@ namespace App\Controllers;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Services\AccountService;
+use App\Services\B2VideoStorageService;
 use App\Services\MatchJerseySlotService;
 use App\Services\MatchJerseyStatService;
 use App\Services\MatchService;
@@ -22,6 +23,11 @@ class VideoController extends Controller
     /** GET /video-upload */
     public function upload(): void
     {
+        if (!Auth::check()) {
+            (new PublicPageController())->videoUpload();
+            return;
+        }
+
         Auth::requirePermission('video.manage', 'Only instructors and admins can manage match videos.');
 
         $matches = new MatchService();
@@ -399,69 +405,102 @@ class VideoController extends Controller
         }
 
         $this->requireManageableMatch($matchId);
-        if ($this->hasActiveAiJob($matchId)) {
-            $this->json([
-                'ok' => false,
-                'error' => 'Stop the active AI job before deleting this video.',
-            ], 409);
-            return;
-        }
+        $storageLock = \App\Services\VideoStorageProtectionService::acquireExclusiveLock();
+        try {
+            $currentAnalysis = (new MatchVideoAnalysisService())->getByMatchId($matchId);
+            $currentStatus = strtolower(trim((string)($currentAnalysis['processing_status'] ?? '')));
+            if (in_array($currentStatus, ['queued', 'processing'], true)) {
+                $this->json([
+                    'ok' => false,
+                    'error' => 'Stop the active AI job before deleting this video.',
+                ], 409);
+                return;
+            }
 
-        $normalized = $this->normalizeStoredVideoUrl($videoUrl);
-        if ($normalized === null) {
-            $this->json([
-                'ok' => false,
-                'error' => 'Invalid stored video URL.',
-            ], 400);
-            return;
-        }
+            $normalized = $this->normalizeStoredVideoUrl($videoUrl);
+            if ($normalized === null) {
+                $this->json([
+                    'ok' => false,
+                    'error' => 'Invalid stored video URL.',
+                ], 400);
+                return;
+            }
 
-        $filename = basename($normalized);
-        if (preg_match('/^match_(\d+)_/i', $filename, $parts) !== 1 || (int)$parts[1] !== $matchId) {
-            $this->json([
-                'ok' => false,
-                'error' => 'You can only delete videos that belong to the selected match.',
-            ], 403);
-            return;
-        }
+            $sourceType = 'local_upload';
+            $deleted = false;
+            if (B2VideoStorageService::isConfigured()) {
+                $storage = new B2VideoStorageService();
+                $objectName = $storage->objectNameFromUrl($normalized);
+                if ($objectName !== null) {
+                    if (
+                        preg_match('#^matches/(\d+)/#', $objectName, $parts) === 1
+                        && (int)$parts[1] !== $matchId
+                    ) {
+                        $this->json([
+                            'ok' => false,
+                            'error' => 'You can only delete videos that belong to the selected match.',
+                        ], 403);
+                        return;
+                    }
+                    try {
+                        $deleted = $storage->deleteVideo($normalized);
+                        $sourceType = 'b2_storage';
+                    } catch (\Throwable $e) {
+                        $this->reportException('b2-delete-video', $e);
+                        $this->json([
+                            'ok' => false,
+                            'error' => 'The Backblaze video could not be deleted right now.',
+                        ], 500);
+                        return;
+                    }
+                }
+            }
 
-        $path = BASE_PATH . '/public' . $normalized;
-        if (!is_file($path)) {
+            if ($sourceType === 'local_upload') {
+                $filename = basename($normalized);
+                if (preg_match('/^match_(\d+)_/i', $filename, $parts) !== 1 || (int)$parts[1] !== $matchId) {
+                    $this->json([
+                        'ok' => false,
+                        'error' => 'You can only delete videos that belong to the selected match.',
+                    ], 403);
+                    return;
+                }
+
+                $path = BASE_PATH . '/public' . $normalized;
+                $deleted = !is_file($path) || @unlink($path);
+            }
+
+            if (!$deleted) {
+                $this->json([
+                    'ok' => false,
+                    'error' => 'The video file could not be deleted right now.',
+                ], 500);
+                return;
+            }
+
+            $matches = new MatchService();
+            $match = $matches->getById($matchId);
+            if (is_array($match) && trim((string)($match['video_url'] ?? '')) === $normalized) {
+                $matches->update($matchId, [
+                    'video_url' => null,
+                    'video_status' => null,
+                ]);
+                (new MatchVideoAnalysisService())->updateByMatchId($matchId, [
+                    'video_url' => null,
+                    'video_source_type' => $sourceType,
+                    'processing_status' => 'pending',
+                    'error_message' => null,
+                    'updated_at' => gmdate('c'),
+                ]);
+            }
+
             $this->json([
                 'ok' => true,
-                'message' => 'Video already removed.',
+                'message' => 'Stored video deleted successfully.',
             ]);
-            return;
+        } finally {
+            \App\Services\VideoStorageProtectionService::releaseLock($storageLock);
         }
-
-        if (!@unlink($path)) {
-            $this->json([
-                'ok' => false,
-                'error' => 'The video file could not be deleted right now.',
-            ], 500);
-            return;
-        }
-
-        $matches = new MatchService();
-        $match = $matches->getById($matchId);
-        if (is_array($match) && trim((string)($match['video_url'] ?? '')) === $normalized) {
-            $matches->update($matchId, [
-                'video_url' => null,
-                'video_status' => null,
-            ]);
-            (new MatchVideoAnalysisService())->updateByMatchId($matchId, [
-                'video_url' => null,
-                'video_source_type' => 'local_upload',
-                'processing_status' => 'pending',
-                'error_message' => null,
-                'updated_at' => gmdate('c'),
-            ]);
-        }
-
-        $this->json([
-            'ok' => true,
-            'message' => 'Stored video deleted successfully.',
-        ]);
     }
 
     /** POST /video-upload/ai/migrate */
@@ -628,7 +667,11 @@ class VideoController extends Controller
             return;
         }
 
-        $runAi = (string)($_POST['run_ai'] ?? '0') === '1';
+        // Every newly uploaded server video is analyzed once automatically.
+        // Stored-video actions may still explicitly choose whether to queue.
+        $hasNewVideoUpload = isset($_FILES['video_file'])
+            && (int)($_FILES['video_file']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE;
+        $runAi = $hasNewVideoUpload || (string)($_POST['run_ai'] ?? '0') === '1';
 
         $matchId = (int)($_POST['match_id'] ?? 0);
         $uid = Auth::uid();
@@ -768,9 +811,20 @@ class VideoController extends Controller
                 throw new RuntimeException('Website storage did not return a video URL.');
             }
             $storedVideoUrl = $videoUrl;
+            $videoSourceType = (string)($storedVideo['storage'] ?? '') === 'b2'
+                ? 'b2_storage'
+                : 'local_upload';
 
             if ($runAi) {
-                $analysis->useRunpodInstance($instanceKey ?? null)->queueAnalysis($matchId, $videoUrl, $uid, 'local_upload');
+                $analysis->useRunpodInstance($instanceKey ?? null)->queueAnalysis(
+                    $matchId,
+                    $videoUrl,
+                    $uid,
+                    $videoSourceType,
+                    [
+                        'ai_video_url' => trim((string)($storedVideo['ai_video_url'] ?? '')),
+                    ]
+                );
                 if ($backgroundProcessingRequested) {
                     $backgroundProcessingStarted = $this->startQueuedAiBackgroundProcessing($analysis, $matchId, 'video-upload-background');
                 }
@@ -858,6 +912,39 @@ class VideoController extends Controller
 
     private function storeWebsiteHostedVideo(array $file, int $matchId): array
     {
+        $storageMode = strtolower(trim((string)(getenv('NUTMEG_VIDEO_STORAGE') ?: 'local')));
+        if ($storageMode === 'b2' && B2VideoStorageService::isConfigured()) {
+            $tmpName = (string)($file['tmp_name'] ?? '');
+            $originalName = trim((string)($file['name'] ?? ''));
+            $mimeType = trim((string)($file['type'] ?? ''));
+            $storage = new B2VideoStorageService();
+            $stored = $storage->uploadVideo(
+                $tmpName,
+                $originalName !== '' ? $originalName : ('match-' . $matchId . '.mp4'),
+                $mimeType,
+                $matchId
+            );
+            $aiVideoUrl = '';
+            try {
+                $optimized = $storage->createAiOptimizedCopy(
+                    $tmpName,
+                    (string)($stored['object_name'] ?? ''),
+                    $originalName !== '' ? $originalName : ('match-' . $matchId . '.mp4')
+                );
+                $aiVideoUrl = trim((string)($optimized['video_url'] ?? ''));
+            } catch (\Throwable $e) {
+                error_log('[ai-video-optimize] ' . $e->getMessage());
+            }
+            // A match recording is commonly uploaded as Part 1 and Part 2.
+            // Keep every object under the match so the app can present both.
+            return [
+                'stored_path' => null,
+                'video_url' => (string)($stored['video_url'] ?? ''),
+                'ai_video_url' => $aiVideoUrl,
+                'storage' => 'b2',
+            ];
+        }
+
         $uploadDir = BASE_PATH . '/public/videos';
         if (!is_dir($uploadDir) && !mkdir($uploadDir, 0775, true) && !is_dir($uploadDir)) {
             throw new RuntimeException('The website upload directory could not be created.');
@@ -916,11 +1003,18 @@ class VideoController extends Controller
     private function normalizeStoredVideoUrl(string $videoUrl): ?string
     {
         $normalized = trim($videoUrl);
-        if (preg_match('#^/videos/[A-Za-z0-9._-]+$#', $normalized) !== 1) {
-            return null;
+        if (preg_match('#^/videos/[A-Za-z0-9._-]+$#', $normalized) === 1) {
+            return $normalized;
         }
 
-        return $normalized;
+        if (B2VideoStorageService::isConfigured()) {
+            $storage = new B2VideoStorageService();
+            if ($storage->isManagedUrl($normalized)) {
+                return $normalized;
+            }
+        }
+
+        return null;
     }
 
     private function pruneOlderMatchStoredVideos(int $matchId, string $keepFileName): void
@@ -999,11 +1093,6 @@ class VideoController extends Controller
 
     private function listStoredVideos(array $visibleMatches, array $analysisByMatch = []): array
     {
-        $dir = BASE_PATH . '/public/videos';
-        if (!is_dir($dir)) {
-            return [];
-        }
-
         $visibleMatchIds = [];
         $allowedVideoUrls = [];
         foreach ($visibleMatches as $match) {
@@ -1017,7 +1106,13 @@ class VideoController extends Controller
                 (string)($analysisByMatch[$matchId]['video_url'] ?? ''),
             ] as $videoUrl) {
                 $videoUrl = trim($videoUrl);
-                if (preg_match('#^/videos/[A-Za-z0-9._-]+$#', $videoUrl) === 1) {
+                if (
+                    preg_match('#^/videos/[A-Za-z0-9._-]+$#', $videoUrl) === 1
+                    || (
+                        B2VideoStorageService::isConfigured()
+                        && (new B2VideoStorageService())->isManagedUrl($videoUrl)
+                    )
+                ) {
                     $allowedVideoUrls[$videoUrl] = true;
                 }
             }
@@ -1028,9 +1123,37 @@ class VideoController extends Controller
         }
 
         $videos = [];
+        if (B2VideoStorageService::isConfigured()) {
+            try {
+                foreach ((new B2VideoStorageService())->listVideos(250) as $video) {
+                    $matchId = isset($video['match_id']) ? (int)$video['match_id'] : null;
+                    $videoUrl = trim((string)($video['url'] ?? ''));
+                    if (
+                        ($matchId !== null && isset($visibleMatchIds[$matchId]))
+                        || isset($allowedVideoUrls[$videoUrl])
+                        || $matchId === null
+                    ) {
+                        $video['search_text'] = strtolower(trim(
+                            (string)($video['name'] ?? '')
+                            . ' '
+                            . ($matchId !== null ? ('match ' . $matchId) : '')
+                        ));
+                        $videos[] = $video;
+                    }
+                }
+            } catch (\Throwable $e) {
+                $this->reportException('b2-list-videos', $e);
+            }
+        }
+
+        $dir = BASE_PATH . '/public/videos';
+        if (!is_dir($dir)) {
+            return array_slice($videos, 0, 250);
+        }
+
         $files = scandir($dir, SCANDIR_SORT_DESCENDING);
         if (!is_array($files)) {
-            return [];
+            return array_slice($videos, 0, 250);
         }
 
         foreach ($files as $file) {
@@ -1080,16 +1203,34 @@ class VideoController extends Controller
 
     private function handleExistingStoredVideo(int $matchId, string $uid, MatchService $matches, VideoAnalysisService $analysis, string $storedVideoUrl, bool $runAi): void
     {
-        $normalized = trim($storedVideoUrl);
-        if (!preg_match('#^/videos/[A-Za-z0-9._-]+$#', $normalized)) {
-            $this->respondUploadError('Please choose a valid stored website video.');
+        $normalized = $this->normalizeStoredVideoUrl($storedVideoUrl);
+        if ($normalized === null) {
+            $this->respondUploadError('Please choose a valid stored video.');
             return;
         }
 
-        $path = BASE_PATH . '/public' . $normalized;
-        if (!is_file($path)) {
-            $this->respondUploadError('That stored video could not be found anymore.');
-            return;
+        $sourceType = 'local_upload';
+        if (B2VideoStorageService::isConfigured()) {
+            $storage = new B2VideoStorageService();
+            $objectName = $storage->objectNameFromUrl($normalized);
+            if ($objectName !== null) {
+                if (
+                    preg_match('#^matches/(\d+)/#', $objectName, $parts) === 1
+                    && (int)$parts[1] !== $matchId
+                ) {
+                    $this->respondUploadError('That stored video does not belong to the selected match.', 403);
+                    return;
+                }
+                $sourceType = 'b2_storage';
+            }
+        }
+
+        if ($sourceType === 'local_upload') {
+            $path = BASE_PATH . '/public' . $normalized;
+            if (!is_file($path)) {
+                $this->respondUploadError('That stored video could not be found anymore.');
+                return;
+            }
         }
 
         $instanceKey = $this->requestAiInstanceKey();
@@ -1107,7 +1248,7 @@ class VideoController extends Controller
             try {
                 VideoAnalysisService::rememberMatchWebsiteBaseUrl($matchId, $this->currentRequestBaseUrl());
                 RunpodPodService::rememberMatchInstance($matchId, $instanceKey);
-                $analysis->useRunpodInstance($instanceKey)->queueAnalysis($matchId, $normalized, $uid, 'local_upload');
+                $analysis->useRunpodInstance($instanceKey)->queueAnalysis($matchId, $normalized, $uid, $sourceType);
             } catch (\Throwable $e) {
                 $this->reportException('video-existing-queue', $e);
                 try {
@@ -1134,9 +1275,9 @@ class VideoController extends Controller
             return;
         }
 
-        $matches->update($matchId, [
-            'video_url' => $normalized,
-            'video_status' => 'uploaded',
+            $matches->update($matchId, [
+                'video_url' => $normalized,
+                'video_status' => 'uploaded',
         ]);
 
         $this->respondUploadSuccess('Stored website video selected successfully. Run AI when you are ready.', $matchId);

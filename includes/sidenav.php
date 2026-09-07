@@ -18,15 +18,11 @@ $_sidenavCanViewAdmin = Auth::can('admin.view');
     data-collapsed="false">
     <div class="p-4 flex items-center justify-between h-16 border-b nm-border">
         <div class="flex items-center gap-3 sidebar-expanded-content">
-            <div class="size-8 text-primary shrink-0">
-                <span class="material-symbols-outlined text-[32px]">sports_soccer</span>
-            </div>
-            <h2 class="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-[-0.015em]">Nutmeg</h2>
+            <img src="/public/assets/fivestats-logo.png" alt="FiveStats" class="size-8 rounded-lg shrink-0">
+            <h2 class="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-[-0.015em]">FiveStats</h2>
         </div>
         <div class="sidebar-collapsed-content" style="display: none;">
-            <div class="size-8 text-primary shrink-0">
-                <span class="material-symbols-outlined text-[32px]">sports_soccer</span>
-            </div>
+            <img src="/public/assets/fivestats-logo.png" alt="FiveStats" class="size-8 rounded-lg shrink-0">
         </div>
         <button class="md:hidden text-slate-500 hover:text-slate-900 dark:text-text-muted dark:hover:text-white"
             onclick="closeMobileMenu()">
@@ -46,6 +42,7 @@ $_sidenavCanViewAdmin = Auth::can('admin.view');
             ['url' => '/match-history', 'icon' => 'history', 'label' => 'Match History', 'key' => 'match-history'],
             ['url' => '/notifications', 'icon' => 'notifications', 'label' => 'Notifications', 'key' => 'notifications'],
             ['url' => '/profile', 'icon' => 'manage_accounts', 'label' => 'Profile & Settings', 'key' => 'profile'],
+            ['url' => '/support', 'icon' => 'support_agent', 'label' => 'Support', 'key' => 'support'],
         ];
         if ($_sidenavCanManageMatchmaking) {
             array_splice($navItems, 1, 0, [[

@@ -30,7 +30,7 @@ require_once BASE_PATH . '/includes/header.php';
 
             <form id="reset-password-form" class="space-y-4 hidden" method="POST" action="/reset-password" hx-boost="false">
                 <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrfToken) ?>">
-                <input type="hidden" name="access_token" id="reset-access-token" value="">
+                <input type="hidden" name="access_token" id="reset-access-token" value="<?= htmlspecialchars($resetAccessToken ?? '', ENT_QUOTES, 'UTF-8') ?>">
 
                 <div>
                     <label class="block text-sm font-medium mb-2">New Password</label>
@@ -58,7 +58,8 @@ require_once BASE_PATH . '/includes/header.php';
 (() => {
     const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
     const queryParams = new URLSearchParams(window.location.search);
-    const token = hashParams.get('access_token') || queryParams.get('access_token') || '';
+    const savedToken = document.getElementById('reset-access-token').value;
+    const token = hashParams.get('access_token') || queryParams.get('access_token') || savedToken || '';
     const errorDescription = hashParams.get('error_description') || queryParams.get('error_description') || '';
     const errorCode = hashParams.get('error') || queryParams.get('error') || '';
 

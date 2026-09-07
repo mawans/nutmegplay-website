@@ -2,7 +2,7 @@
 // Header include for all pages
 ?>
 <?php
-$pageTitle = $pageTitle ?? 'Nutmeg Dashboard';
+$pageTitle = $pageTitle ?? 'FiveStats Dashboard';
 $extraHead = $extraHead ?? '';
 $useDirectPublicAssets = PHP_SAPI === 'cli-server';
 $assetPrefix = $useDirectPublicAssets ? '' : '/public';
@@ -29,6 +29,7 @@ if (is_file($htmxScriptPath)) {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($pageTitle) ?></title>
+    <link rel="icon" type="image/png" href="<?= htmlspecialchars($assetPrefix . '/assets/fivestats-logo.png', ENT_QUOTES, 'UTF-8') ?>">
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Noto+Sans:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -38,7 +39,7 @@ if (is_file($htmxScriptPath)) {
     <script src="<?= htmlspecialchars($htmxScriptHref, ENT_QUOTES, 'UTF-8') ?>"></script>
 
     <style>
-        /* Nutmeg dark palette utility classes.
+        /* FiveStats dark palette utility classes.
            These are NOT in the prebuilt Tailwind app.css, so we inject them
            directly here so every dashboard page can use them without rebuilding
            Tailwind (no Node.js on the shared host). Keep names prefixed with

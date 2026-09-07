@@ -61,6 +61,20 @@ class MatchVideoAnalysisService
     }
 
     /**
+     * Active rows are storage leases. This strict variant must be used before
+     * destructive cleanup so a database outage fails closed.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function listActiveStrict(int $limit = 2000): array
+    {
+        return array_merge(
+            $this->listByStatusStrict('queued', $limit),
+            $this->listByStatusStrict('processing', $limit)
+        );
+    }
+
+    /**
      * @param array<int, int> $matchIds
      * @return array<int, array<string, mixed>>
      */

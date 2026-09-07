@@ -1,5 +1,5 @@
 <?php 
-$pageTitle = 'Login - Nutmeg';
+$pageTitle = 'Login - FiveStats';
 $csrfToken = \App\Core\Auth::csrfToken();
 require_once BASE_PATH . '/includes/header.php';
 ?>
@@ -19,10 +19,8 @@ require_once BASE_PATH . '/includes/header.php';
         </div>
         
         <div class="relative z-10 max-w-md text-center px-8">
-            <div class="size-20 rounded-2xl bg-primary/20 backdrop-blur-sm flex items-center justify-center mx-auto mb-8 border border-primary/30">
-                <span class="material-symbols-outlined text-primary text-5xl">sports_soccer</span>
-            </div>
-            <h1 class="text-4xl font-bold text-white mb-4 tracking-tight">Nutmeg</h1>
+            <img src="/public/assets/fivestats-logo.png" alt="FiveStats" class="size-20 rounded-2xl mx-auto mb-8 border border-primary/30">
+            <h1 class="text-4xl font-bold text-white mb-4 tracking-tight">FiveStats</h1>
             <p class="text-lg text-white/70 mb-8 leading-relaxed">The complete football analytics platform. Track matches, manage teams, and elevate your game.</p>
             
             <!-- Stats row -->
@@ -48,10 +46,8 @@ require_once BASE_PATH . '/includes/header.php';
         <div class="w-full max-w-sm">
             <!-- Mobile logo (visible on small screens) -->
             <div class="lg:hidden text-center mb-8">
-                <div class="size-14 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                    <span class="material-symbols-outlined text-primary text-3xl">sports_soccer</span>
-                </div>
-                <h1 class="text-xl font-bold">Nutmeg</h1>
+                <img src="/public/assets/fivestats-logo.png" alt="FiveStats" class="size-14 rounded-xl mx-auto mb-3">
+                <h1 class="text-xl font-bold">FiveStats</h1>
             </div>
 
             <div class="mb-8">

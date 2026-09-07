@@ -21,6 +21,20 @@ require_once __DIR__ . '/../app/bootstrap.php';
 
 use App\Services\RunpodPodService;
 
+function writeIdleSweepMessage(string $message): void
+{
+    if (PHP_SAPI === 'cli') {
+        $stream = fopen('php://stdout', 'wb');
+        if (is_resource($stream)) {
+            fwrite($stream, $message);
+            fclose($stream);
+            return;
+        }
+    }
+
+    echo $message;
+}
+
 $startedAt = gmdate('c');
 $instances = RunpodPodService::configuredInstances();
 $keysToCheck = [];
@@ -40,7 +54,7 @@ if (is_string($activeKey) && $activeKey !== '') {
 }
 
 if ($keysToCheck === []) {
-    fwrite(STDOUT, "[{$startedAt}] No Runpod instances configured. Nothing to sweep.\n");
+    writeIdleSweepMessage("[{$startedAt}] No Runpod instances configured. Nothing to sweep.\n");
     exit(0);
 }
 
@@ -69,5 +83,5 @@ foreach (array_keys($keysToCheck) as $instanceKey) {
     }
 }
 
-fwrite(STDOUT, sprintf("[%s] idle-sweep %s\n", $startedAt, implode(' ', $summary)));
+writeIdleSweepMessage(sprintf("[%s] idle-sweep %s\n", $startedAt, implode(' ', $summary)));
 exit(0);

@@ -2,6 +2,7 @@
 namespace App\Controllers;
 
 use App\Core\ApiAuth;
+use App\Core\Cache;
 use App\Core\SupabaseClient;
 use App\Services\AccountService;
 use App\Services\MatchService;
@@ -17,6 +18,8 @@ use App\Services\AnnouncementService;
 use App\Services\ChallengeTemplateService;
 use App\Services\InviteService;
 use App\Services\VideoAnalysisService;
+use App\Services\B2VideoStorageService;
+use App\Services\AiProgressService;
 
 /**
  * REST API Controller for the React Native mobile app.
@@ -39,6 +42,25 @@ class ApiController
     {
         $raw = file_get_contents('php://input');
         return json_decode($raw, true) ?? [];
+    }
+
+    private function logAiApi(string $event, array $context = []): void
+    {
+        $context['event'] = $event;
+        $context['uid'] = ApiAuth::uid();
+        $context['time'] = gmdate('c');
+        $encoded = json_encode($context, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        error_log('[ai-api] ' . (is_string($encoded) ? $encoded : $event));
+    }
+
+    private function creditPacks(): array
+    {
+        return [
+            'welcome' => ['credits' => 1, 'amount_cents' => 100, 'name' => 'Welcome Offer'],
+            'solo' => ['credits' => 3, 'amount_cents' => 349, 'name' => 'Solo Pack'],
+            'team' => ['credits' => 6, 'amount_cents' => 599, 'name' => 'Team Pack'],
+            'champion' => ['credits' => 13, 'amount_cents' => 999, 'name' => 'Champion Pack'],
+        ];
     }
 
     private function accountLabel(array $account): string
@@ -260,6 +282,81 @@ class ApiController
         ]);
     }
 
+    /** POST /api/account/delete — Reauthenticate and permanently delete the current account. */
+    public function deleteAccount(): void
+    {
+        $account = ApiAuth::require();
+        $uid = ApiAuth::uid();
+        $email = trim((string)(ApiAuth::user()['email'] ?? $account['email'] ?? ''));
+        $password = (string)($this->input()['password'] ?? '');
+
+        if ($password === '') {
+            $this->json(['error' => true, 'message' => 'Enter your password to delete your account.'], 422);
+            return;
+        }
+
+        if ($uid === '' || $email === '') {
+            $this->json(['error' => true, 'message' => 'Your account identity could not be verified.'], 400);
+            return;
+        }
+
+        $sb = SupabaseClient::getInstance();
+        if (!$sb->hasServiceRoleKey()) {
+            $this->json(['error' => true, 'message' => 'Account deletion is temporarily unavailable.'], 503);
+            return;
+        }
+
+        $reauth = $sb->authSignIn($email, $password);
+        $reauthUid = (string)($reauth['user']['id'] ?? '');
+        if (!$reauth || !empty($reauth['error']) || $reauthUid !== $uid) {
+            $this->json(['error' => true, 'message' => 'The password you entered is incorrect.'], 403);
+            return;
+        }
+
+        // Remove user-owned rows first. Core statistics also cascade from
+        // accounts.uid, but explicit cleanup supports older production schemas.
+        $ownedRows = [
+            ['notifications', 'user_id'],
+            ['stat_unlocks', 'user_id'],
+            ['credit_transactions', 'user_id'],
+            ['user_credits', 'user_id'],
+            ['challenge_participation', 'user_id'],
+            ['challenge_achievements', 'user_id'],
+            ['match_stats', 'user_id'],
+            ['xp_history', 'user_id'],
+            ['player_progress', 'user_id'],
+            ['invites', 'sent_to'],
+            ['invites', 'sent_by'],
+        ];
+
+        foreach ($ownedRows as [$table, $column]) {
+            $deleted = SupabaseClient::getInstance()->from($table)->eq($column, $uid)->delete();
+            if ($deleted === null || !empty($deleted['error'])) {
+                error_log("Account deletion failed while cleaning {$table}.{$column} for {$uid}");
+                $this->json(['error' => true, 'message' => 'Your account could not be deleted completely. Please try again.'], 500);
+                return;
+            }
+        }
+
+        $accountDeleted = SupabaseClient::getInstance()
+            ->from('accounts')
+            ->eq('uid', $uid)
+            ->delete();
+        if ($accountDeleted === null || !empty($accountDeleted['error'])) {
+            $this->json(['error' => true, 'message' => 'Your account could not be deleted. Please try again.'], 500);
+            return;
+        }
+
+        $authDeleted = $sb->authAdminDeleteUser($uid);
+        if ($authDeleted === null || !empty($authDeleted['error'])) {
+            error_log("Account data was removed but Auth deletion failed for {$uid}");
+            $this->json(['error' => true, 'message' => 'Your profile data was removed, but sign-in removal needs support assistance.'], 500);
+            return;
+        }
+
+        $this->json(['message' => 'Your account has been permanently deleted.']);
+    }
+
     /* ================================================================== */
     /*  DASHBOARD                                                          */
     /* ================================================================== */
@@ -387,6 +484,149 @@ class ApiController
             'recent'     => $recent,
             'six_stats'  => $sixStats,
         ]);
+    }
+
+    /** GET /api/player/analysis-stats — AI totals plus paid match history. */
+    public function playerAnalysisStats(): void
+    {
+        $account = ApiAuth::require();
+        $uid = ApiAuth::uid();
+        $db = SupabaseClient::getInstance();
+
+        $unlocks = $db->from('stat_unlocks')
+            ->select('match_id, shirt_number, created_at')
+            ->eq('user_id', $uid)
+            ->order('created_at', false)
+            ->limit(200)
+            ->execute();
+        $unlocks = ($unlocks && empty($unlocks['error']) && is_array($unlocks))
+            ? $unlocks
+            : [];
+
+        $matchIds = array_values(array_unique(array_filter(array_map(
+            static fn(array $row): int => (int)($row['match_id'] ?? 0),
+            $unlocks
+        ))));
+        $matches = (new MatchService())->getByIds($matchIds);
+        $matchesById = [];
+        foreach ($matches as $match) {
+            $matchesById[(int)($match['id'] ?? 0)] = $match;
+        }
+
+        $statsByMatch = (new MatchJerseyStatService())->groupedByMatchIds($matchIds);
+        $analysisRows = [];
+        if ($matchIds !== []) {
+            $analysisRows = $db->from('match_video_analysis')
+                ->select('match_id, video_url, processing_status, processed_at, error_message')
+                ->filter('match_id', 'in', '(' . implode(',', $matchIds) . ')')
+                ->execute();
+            if (!$analysisRows || !empty($analysisRows['error']) || !is_array($analysisRows)) {
+                $analysisRows = [];
+            }
+        }
+        $analysisByMatch = [];
+        foreach ($analysisRows as $analysisRow) {
+            $analysisByMatch[(int)($analysisRow['match_id'] ?? 0)] = $analysisRow;
+        }
+
+        $history = [];
+        $statRows = [];
+        foreach ($unlocks as $unlock) {
+            $matchId = (int)($unlock['match_id'] ?? 0);
+            $shirtNumber = (int)($unlock['shirt_number'] ?? 0);
+            $teams = $statsByMatch[$matchId] ?? ['blue' => [], 'red' => []];
+            $matchStats = null;
+            foreach (array_merge($teams['blue'] ?? [], $teams['red'] ?? []) as $row) {
+                // The paid unlock is the authorization record. Jersey stats are
+                // match-level data and must remain readable even if a lineup
+                // assignment is later edited or another device claims a slot.
+                if ((int)($row['jersey_number'] ?? 0) === $shirtNumber) {
+                    $matchStats = $row;
+                    break;
+                }
+            }
+
+            if (is_array($matchStats)) {
+                $statRows[] = $matchStats;
+            }
+
+            $match = $matchesById[$matchId] ?? [];
+            $analysis = $analysisByMatch[$matchId] ?? [];
+            $analysisVideoUrl = (string)(
+                $analysis['video_url']
+                ?? $match['video_url']
+                ?? ''
+            );
+            $history[] = [
+                'match_id' => $matchId,
+                'shirt_number' => $shirtNumber,
+                'paid_at' => $unlock['created_at'] ?? null,
+                'date' => $match['date'] ?? null,
+                'time' => $match['time'] ?? null,
+                'challanger' => $match['challanger'] ?? 'Team A',
+                'opponent' => $match['opponent'] ?? 'Team B',
+                'location' => $match['location'] ?? null,
+                'processing_status' => $analysis['processing_status'] ?? 'queued',
+                'processed_at' => $analysis['processed_at'] ?? null,
+                'error_message' => $analysis['error_message'] ?? null,
+                'video_url' => $analysisVideoUrl,
+                'stats' => is_array($matchStats)
+                    ? $this->aggregateAiStatRows([$matchStats])
+                    : null,
+            ];
+        }
+
+        $this->json([
+            'account' => $account,
+            'totals' => $this->aggregateAiStatRows($statRows),
+            'history' => $history,
+        ]);
+    }
+
+    private function aggregateAiStatRows(array $rows): array
+    {
+        $keys = [
+            'goals',
+            'assists',
+            'distance_meters',
+            'sprints',
+            'successful_passes',
+            'passes_attempted',
+            'successful_dribbles',
+            'dribbles_attempted',
+            'interceptions',
+            'duels_won',
+            'shots',
+            'shots_on_target',
+            'minutes_played',
+        ];
+        $totals = array_fill_keys($keys, 0);
+        $totals['matches'] = count($rows);
+        $totals['top_speed_kmh'] = 0.0;
+
+        foreach ($rows as $row) {
+            foreach ($keys as $key) {
+                $totals[$key] += (int)($row[$key] ?? 0);
+            }
+            $totals['top_speed_kmh'] = max(
+                $totals['top_speed_kmh'],
+                (float)($row['top_speed_kmh'] ?? 0)
+            );
+        }
+
+        $totals['distance_km'] = round($totals['distance_meters'] / 1000, 1);
+        $totals['pass_accuracy'] = $totals['passes_attempted'] > 0
+            ? round(($totals['successful_passes'] / $totals['passes_attempted']) * 100, 1)
+            : 0.0;
+        $totals['dribble_accuracy'] = $totals['dribbles_attempted'] > 0
+            ? round(($totals['successful_dribbles'] / $totals['dribbles_attempted']) * 100, 1)
+            : 0.0;
+        $totals['shot_accuracy'] = $totals['shots'] > 0
+            ? round(($totals['shots_on_target'] / $totals['shots']) * 100, 1)
+            : 0.0;
+        $totals['top_speed_kmh'] = round($totals['top_speed_kmh'], 1);
+
+        return $totals;
     }
 
     /** Calculate PAC/SHO/PAS/DRI/DEF/PHY from match stats */
@@ -676,24 +916,213 @@ class ApiController
         ]);
     }
 
-    /** POST /api/video-analysis/request — Queue a Drive video for AI analysis. */
+    /** POST /api/credits/checkout — Create a Stripe Checkout Session for credits. */
+    public function createCreditCheckout(): void
+    {
+        $account = ApiAuth::require();
+        $input = $this->input();
+        $packKey = strtolower(trim((string)($input['pack_key'] ?? 'solo')));
+        $packs = $this->creditPacks();
+        $pack = $packs[$packKey] ?? null;
+        if ($pack === null) {
+            $this->json(['error' => true, 'message' => 'Unknown credit pack.'], 400);
+            return;
+        }
+
+        $secretKey = trim((string)(getenv('STRIPE_SECRET_KEY') ?: getenv('NUTMEG_STRIPE_SECRET_KEY') ?: ''));
+        if ($secretKey === '') {
+            $this->json(['error' => true, 'message' => 'Stripe checkout is not configured.'], 503);
+            return;
+        }
+
+        $uid = ApiAuth::uid();
+        $email = trim((string)($account['email'] ?? ''));
+        $appScheme = trim((string)(getenv('NUTMEG_APP_SCHEME') ?: 'fivestats'));
+        $successUrl = $this->checkoutReturnUrl(
+            (string)($input['success_url'] ?? ''),
+            $appScheme . '://stripe-success',
+            [
+                'session_id' => '{CHECKOUT_SESSION_ID}',
+                'pack' => $packKey,
+            ]
+        );
+        $cancelUrl = $this->checkoutReturnUrl(
+            (string)($input['cancel_url'] ?? ''),
+            $appScheme . '://stripe-cancel',
+            ['pack' => $packKey]
+        );
+
+        $payload = [
+            'mode' => 'payment',
+            'success_url' => $successUrl,
+            'cancel_url' => $cancelUrl,
+            'client_reference_id' => $uid,
+            'metadata[user_id]' => $uid,
+            'metadata[pack_key]' => $packKey,
+            'metadata[credits]' => (string)$pack['credits'],
+            'payment_intent_data[metadata][user_id]' => $uid,
+            'payment_intent_data[metadata][pack_key]' => $packKey,
+            'payment_intent_data[metadata][credits]' => (string)$pack['credits'],
+            'line_items[0][quantity]' => '1',
+            'line_items[0][price_data][currency]' => 'eur',
+            'line_items[0][price_data][unit_amount]' => (string)$pack['amount_cents'],
+            'line_items[0][price_data][product_data][name]' => 'FiveStats ' . $pack['name'],
+            'line_items[0][price_data][product_data][description]' => $pack['credits'] . ' AI stats credit' . ($pack['credits'] === 1 ? '' : 's'),
+        ];
+        if ($email !== '') {
+            $payload['customer_email'] = $email;
+        }
+
+        try {
+            $session = $this->stripeRequest('POST', '/v1/checkout/sessions', $payload, $secretKey);
+            $url = trim((string)($session['url'] ?? ''));
+            if ($url === '') {
+                throw new \RuntimeException('Stripe did not return a checkout URL.');
+            }
+
+            $this->json([
+                'url' => $url,
+                'session_id' => $session['id'] ?? null,
+                'pack_key' => $packKey,
+                'credits' => (int)$pack['credits'],
+            ]);
+        } catch (\Throwable $e) {
+            error_log('[stripe-checkout] ' . $e->getMessage());
+            $this->json(['error' => true, 'message' => 'Could not start Stripe checkout.'], 502);
+        }
+    }
+
+    /** POST /api/credits/confirm — Confirm a returned Checkout Session and grant credits. */
+    public function confirmCreditCheckout(): void
+    {
+        ApiAuth::require();
+        $input = $this->input();
+        $sessionId = trim((string)($input['session_id'] ?? ''));
+        if ($sessionId === '') {
+            $this->json(['error' => true, 'message' => 'Missing Stripe session.'], 400);
+            return;
+        }
+
+        $secretKey = trim((string)(getenv('STRIPE_SECRET_KEY') ?: getenv('NUTMEG_STRIPE_SECRET_KEY') ?: ''));
+        if ($secretKey === '') {
+            $this->json(['error' => true, 'message' => 'Stripe checkout is not configured.'], 503);
+            return;
+        }
+
+        try {
+            $session = $this->stripeRequest('GET', '/v1/checkout/sessions/' . rawurlencode($sessionId), [], $secretKey);
+            $metadata = is_array($session['metadata'] ?? null) ? $session['metadata'] : [];
+            if (trim((string)($metadata['user_id'] ?? '')) !== ApiAuth::uid()) {
+                $this->json(['error' => true, 'message' => 'This checkout session belongs to another user.'], 403);
+                return;
+            }
+
+            $paymentStatus = strtolower(trim((string)($session['payment_status'] ?? '')));
+            if ($paymentStatus !== 'paid') {
+                $this->json([
+                    'credited' => false,
+                    'status' => $paymentStatus ?: 'unpaid',
+                    'message' => 'Payment is not complete yet.',
+                ], 202);
+                return;
+            }
+
+            $grant = $this->grantCreditsForStripeSession($session);
+            $summary = $this->creditSummary(ApiAuth::uid());
+            $this->json([
+                'credited' => true,
+                'already_credited' => (bool)($grant['already_credited'] ?? false),
+                'credits_added' => (int)($grant['credits'] ?? 0),
+                'balance' => (int)($summary['balance'] ?? 0),
+                'welcome_used' => (bool)($summary['welcome_used'] ?? false),
+            ]);
+        } catch (\Throwable $e) {
+            error_log('[stripe-confirm] ' . $e->getMessage());
+            $this->json(['error' => true, 'message' => 'Could not confirm Stripe payment.'], 502);
+        }
+    }
+
+    /** POST /api/stripe/webhook — Stripe signed webhook. */
+    public function stripeWebhook(): void
+    {
+        $rawBody = (string)file_get_contents('php://input');
+        $signature = trim((string)($_SERVER['HTTP_STRIPE_SIGNATURE'] ?? ''));
+        $webhookSecret = trim((string)(getenv('STRIPE_WEBHOOK_SECRET') ?: getenv('NUTMEG_STRIPE_WEBHOOK_SECRET') ?: ''));
+
+        if ($webhookSecret === '') {
+            $this->json(['error' => true, 'message' => 'Stripe webhook secret is not configured.'], 503);
+            return;
+        }
+
+        if (!$this->verifyStripeWebhookSignature($rawBody, $signature, $webhookSecret)) {
+            $this->json(['error' => true, 'message' => 'Invalid Stripe signature.'], 400);
+            return;
+        }
+
+        $event = json_decode($rawBody, true);
+        if (!is_array($event)) {
+            $this->json(['error' => true, 'message' => 'Invalid Stripe payload.'], 400);
+            return;
+        }
+
+        $type = (string)($event['type'] ?? '');
+        $session = $event['data']['object'] ?? null;
+        if ($type === 'checkout.session.completed' && is_array($session)) {
+            try {
+                $this->grantCreditsForStripeSession($session);
+            } catch (\Throwable $e) {
+                error_log('[stripe-webhook] ' . $e->getMessage());
+                $this->json(['error' => true, 'message' => 'Credit grant failed.'], 500);
+                return;
+            }
+        }
+
+        $this->json(['received' => true]);
+    }
+
+    /** POST /api/video-analysis/request — Queue a B2 video for AI analysis. */
     public function requestVideoAnalysis(): void
     {
         $account = ApiAuth::require();
         $input = $this->input();
 
         $matchId = (int)($input['match_id'] ?? 0);
-        $driveFileId = trim((string)($input['drive_file_id'] ?? ''));
+        $requestedVideoUrl = trim((string)($input['video_url'] ?? ''));
+        $clipMetadata = [];
+        foreach (['recording_id', 'file_name', 'folder_name', 'folder_path', 'video_part_number', 'video_group_key', 'camera_number', 'storage_version', 'ai_video_url'] as $key) {
+            $value = trim((string)($input[$key] ?? ''));
+            if ($value !== '') {
+                $clipMetadata[$key] = $value;
+            }
+        }
         $teamColor = strtolower(trim((string)($input['team_color'] ?? '')));
         $jerseyNumber = (int)($input['jersey_number'] ?? 0);
+        $this->logAiApi('request:start', [
+            'match_id' => $matchId,
+            'jersey_number' => $jerseyNumber,
+            'team_color' => $teamColor,
+            'has_video_url' => $requestedVideoUrl !== '',
+        ]);
 
-        if ($matchId <= 0 || $driveFileId === '' || !in_array($teamColor, ['blue', 'red'], true)) {
-            $this->json(['error' => true, 'message' => 'Match, Drive video, and team color are required.'], 400);
+        if ($matchId <= 0 || !in_array($teamColor, ['blue', 'red'], true)) {
+            $this->logAiApi('request:validation_failed', [
+                'match_id' => $matchId,
+                'jersey_number' => $jerseyNumber,
+                'team_color' => $teamColor,
+                'reason' => 'missing required fields',
+            ]);
+            $this->json(['error' => true, 'message' => 'Match and team color are required.'], 400);
             return;
         }
 
         $validNumbers = $teamColor === 'blue' ? [1, 2, 3, 4, 5] : [6, 7, 8, 9, 10];
         if (!in_array($jerseyNumber, $validNumbers, true)) {
+            $this->logAiApi('request:validation_failed', [
+                'match_id' => $matchId,
+                'jersey_number' => $jerseyNumber,
+                'team_color' => $teamColor,
+                'reason' => 'invalid jersey for team',
+            ]);
             $this->json(['error' => true, 'message' => 'Choose a valid jersey number for the selected team.'], 400);
             return;
         }
@@ -701,78 +1130,317 @@ class ApiController
         $matchService = new MatchService();
         $match = $matchService->getById($matchId);
         if (!$match) {
+            $this->logAiApi('request:match_not_found', ['match_id' => $matchId]);
             $this->json(['error' => true, 'message' => 'Match not found.'], 404);
             return;
         }
 
         $uid = ApiAuth::uid();
         if (!ApiAuth::isInstructor() && !$this->userParticipatesInMatch($match, $uid)) {
+            $this->logAiApi('request:forbidden', [
+                'match_id' => $matchId,
+                'uid' => $uid,
+            ]);
             $this->json(['error' => true, 'message' => 'You can only analyze videos for your matches.'], 403);
             return;
         }
 
+        $matchVideoUrl = trim((string)($match['video_url'] ?? ''));
+        if ($requestedVideoUrl === '') {
+            $requestedVideoUrl = $matchVideoUrl;
+        }
+        if ($requestedVideoUrl === '') {
+            $this->json(['error' => true, 'message' => 'This match does not have a video available.'], 422);
+            return;
+        }
+        $isManagedB2 = B2VideoStorageService::isConfigured()
+            && (new B2VideoStorageService())->isManagedUrl($requestedVideoUrl);
+        if (!$isManagedB2) {
+            $this->json(['error' => true, 'message' => 'Only FiveStats Cloud videos can be analyzed.'], 422);
+            return;
+        }
+
+        $playerName = $this->accountLabel($account);
+        $downloadUrl = $requestedVideoUrl;
+        $this->rememberAnalysisRequester(
+            $matchId,
+            $jerseyNumber,
+            $uid,
+            $playerName
+        );
+
         $analysisRows = new MatchVideoAnalysisService();
         $existingAnalysis = $analysisRows->getByMatchId($matchId);
         $existingStatus = strtolower(trim((string)($existingAnalysis['processing_status'] ?? '')));
+        if ($existingStatus === 'failed') {
+            $recoveredAnalysis = (new VideoAnalysisService())
+                ->recoverCompletedAnalysisFromPersistedStats($matchId);
+            if (is_array($recoveredAnalysis)) {
+                $existingAnalysis = $recoveredAnalysis;
+                $existingStatus = 'processed';
+            }
+        }
+
+        // Mobile clients no longer start GPU processing. The server/website
+        // owns AI inference: new uploaded videos are discovered by cron,
+        // queued once, processed by RunPod, and stored in the database. This
+        // endpoint now only unlocks/returns already-persisted stats.
+        $progress = (new VideoAnalysisService())->getLiveProgress($matchId);
+        if ($existingStatus === 'processed') {
+            if (!ApiAuth::isInstructor() && !$this->userHasStatUnlock($uid, $matchId, $jerseyNumber)) {
+                $this->json([
+                    'error' => true,
+                    'message' => 'Use one credit to unlock these saved stats.',
+                    'match_id' => $matchId,
+                    'status' => 'processed',
+                    'progress' => $progress,
+                    'worker_started' => false,
+                    'worker_state' => 'not_needed',
+                ], 402);
+                return;
+            }
+
+            $playerStats = $this->unlockProcessedJerseyStats(
+                $matchId,
+                $jerseyNumber,
+                $uid,
+                $playerName,
+                $existingAnalysis
+            );
+
+            if (is_array($playerStats)) {
+                $this->json([
+                    'message' => 'Saved match stats unlocked.',
+                    'match_id' => $matchId,
+                    'status' => 'processed',
+                    'progress' => $progress,
+                    'stats' => $playerStats,
+                    'worker_started' => false,
+                    'worker_state' => 'not_needed',
+                ]);
+                return;
+            }
+
+            $this->json([
+                'error' => true,
+                'message' => 'This match is analyzed, but this jersey result is missing. Please contact support.',
+                'match_id' => $matchId,
+                'status' => 'processed',
+                'progress' => $progress,
+                'worker_started' => false,
+                'worker_state' => 'not_needed',
+            ], 422);
+            return;
+        }
+
         if (in_array($existingStatus, ['queued', 'processing'], true)) {
-            $this->ensureAiWorkerStarting();
+            $this->json([
+                'message' => 'Stats are being prepared automatically on the server.',
+                'match_id' => $matchId,
+                'status' => $existingStatus,
+                'progress' => $progress,
+                'worker_started' => false,
+                'worker_state' => 'server_managed',
+            ], 202);
+            return;
+        }
+
+        $this->json([
+            'error' => true,
+            'message' => $existingStatus === 'failed'
+                ? 'Server-side AI processing failed for this video. Please contact support or wait for the server retry.'
+                : 'Stats are not ready yet. New server videos are analyzed automatically.',
+            'match_id' => $matchId,
+            'status' => $existingStatus !== '' ? $existingStatus : 'pending',
+            'progress' => $progress,
+            'worker_started' => false,
+            'worker_state' => 'server_managed',
+        ], $existingStatus === 'failed' ? 409 : 425);
+        return;
+
+        if ($existingStatus === 'failed') {
+            $failedAt = strtotime((string)($existingAnalysis['updated_at'] ?? '')) ?: 0;
+            $isRecentFailure = $failedAt > 0 && (time() - $failedAt) < 900;
+            $failureMessage = trim((string)($existingAnalysis['error_message'] ?? ''));
+            $wasManualStop = str_contains(strtolower($failureMessage), 'stopped manually')
+                || str_contains(strtolower($failureMessage), 'you stopped the analysis');
+            $failureOutput = is_array($existingAnalysis['ai_output'] ?? null)
+                ? $existingAnalysis['ai_output']
+                : [];
+            $wasClearedForRetry = ($failureOutput['cleared_for_retry'] ?? false) === true
+                || ($failureOutput['cleared_for_new_ai'] ?? false) === true
+                || str_contains(strtolower($failureMessage), 'processing was cleared');
+            if ($isRecentFailure && !$wasManualStop && !$wasClearedForRetry) {
+                $message = $failureMessage !== '' ? $failureMessage : 'AI processing failed. Please start AI again.';
+                $this->logAiApi('request:recent_failed_blocked', [
+                    'match_id' => $matchId,
+                    'message' => $message,
+                ]);
+                $this->json([
+                    'error' => true,
+                    'message' => $message,
+                    'match_id' => $matchId,
+                    'status' => 'failed',
+                    'progress' => (new VideoAnalysisService())->getLiveProgress($matchId),
+                ], 409);
+                return;
+            }
+        }
+        if (in_array($existingStatus, ['queued', 'processing'], true)) {
+            $this->logAiApi('request:already_running', [
+                'match_id' => $matchId,
+                'status' => $existingStatus,
+                'progress_stage' => $existingAnalysis['progress_stage'] ?? null,
+                'progress_percent' => $existingAnalysis['progress_percent'] ?? null,
+                'progress_message' => $existingAnalysis['progress_message'] ?? null,
+            ]);
+            $workerStart = $this->ensureAiWorkerStarting($matchId);
+            if ($this->isTerminalWorkerStartFailure($workerStart)) {
+                (new VideoAnalysisService())->failAnalysis($matchId, (string)$workerStart['message']);
+                $this->json([
+                    'error' => true,
+                    'message' => (string)$workerStart['message'],
+                    'match_id' => $matchId,
+                    'status' => 'failed',
+                    'refunded' => true,
+                ], 503);
+                return;
+            }
             $kicked = false;
             try {
                 $kicked = (new VideoAnalysisService())->kickBackgroundProcessing($matchId);
             } catch (\Throwable $e) {
-                error_log('[api-video-analysis-rekick] ' . $e->getMessage());
+                $this->logAiApi('request:rekick_exception', [
+                    'match_id' => $matchId,
+                    'message' => $e->getMessage(),
+                ]);
             }
+            $this->logAiApi('request:already_running_result', [
+                'match_id' => $matchId,
+                'status' => $existingStatus,
+                'kicked' => $kicked,
+                'worker' => $workerStart,
+            ]);
             $this->json([
                 'message' => 'AI analysis is already running for this match.',
                 'match_id' => $matchId,
                 'status' => $existingStatus,
                 'kicked' => $kicked,
+                'worker_started' => $workerStart['started'],
+                'worker_state' => $workerStart['state'],
+                'worker_message' => $workerStart['message'],
             ]);
             return;
         }
 
-        $playerName = $this->accountLabel($account);
-        $slotService = new MatchJerseySlotService();
-        $slots = $slotService->ensureDefaults($matchId);
-        $assignments = [];
-        foreach ($slots as $slot) {
-            $number = (int)($slot['jersey_number'] ?? 0);
-            if ($number <= 0) {
-                continue;
-            }
-            $assignments[$number] = [
-                'player_uid' => $slot['player_uid'] ?? null,
-                'player_name' => $slot['player_name'] ?? null,
-            ];
-        }
-        $assignments[$jerseyNumber] = [
-            'player_uid' => $uid,
-            'player_name' => $playerName,
-        ];
-        $slotService->replaceAssignments($matchId, $assignments);
+        $existingAnalysis = $analysisRows->getByMatchId($matchId);
+        $existingStatus = strtolower(trim((string)($existingAnalysis['processing_status'] ?? '')));
+        if ($existingStatus === 'processed') {
+            $playerStats = $this->unlockProcessedJerseyStats(
+                $matchId,
+                $jerseyNumber,
+                $uid,
+                $playerName,
+                $existingAnalysis
+            );
 
-        $downloadUrl = 'https://drive.usercontent.google.com/download?' . http_build_query([
-            'id' => $driveFileId,
-            'export' => 'download',
-        ]);
+            if (is_array($playerStats)) {
+                $progress = (new VideoAnalysisService())->getLiveProgress($matchId);
+                $this->logAiApi('request:already_processed_unlocked', [
+                    'match_id' => $matchId,
+                    'uid' => $uid,
+                    'jersey_number' => $jerseyNumber,
+                ]);
+                $this->json([
+                    'message' => 'Your match has already been analyzed. Stats unlocked.',
+                    'match_id' => $matchId,
+                    'status' => 'processed',
+                    'progress' => $progress,
+                    'stats' => $playerStats,
+                    'worker_started' => false,
+                    'worker_state' => 'not_needed',
+                ]);
+                return;
+            }
+
+            // A completed match is immutable from the mobile unlock flow. If a
+            // legacy result is missing this jersey, report the data problem
+            // instead of spending GPU time analyzing the same video again.
+            $this->logAiApi('request:processed_stats_missing', [
+                'match_id' => $matchId,
+                'uid' => $uid,
+                'jersey_number' => $jerseyNumber,
+            ]);
+            $this->json([
+                'error' => true,
+                'message' => 'This match is already analyzed, but this player result is missing. Please contact support.',
+                'match_id' => $matchId,
+                'status' => 'processed',
+                'worker_started' => false,
+                'worker_state' => 'not_needed',
+            ], 422);
+            return;
+        }
 
         try {
             $analysis = new VideoAnalysisService();
-            $analysis->queueAnalysis($matchId, $downloadUrl, $uid, 'external_url');
-            $this->ensureAiWorkerStarting();
+            $sourceType = B2VideoStorageService::isConfigured()
+                && (new B2VideoStorageService())->isManagedUrl($downloadUrl)
+                ? 'b2_storage'
+                : 'external_url';
+            $analysis->queueAnalysis($matchId, $downloadUrl, $uid, $sourceType, $clipMetadata);
+            $this->logAiApi('request:queued', [
+                'match_id' => $matchId,
+                'uid' => $uid,
+                'jersey_number' => $jerseyNumber,
+                'team_color' => $teamColor,
+                'download_url_host' => parse_url($downloadUrl, PHP_URL_HOST),
+                'recording_id' => $clipMetadata['recording_id'] ?? null,
+                'file_name' => $clipMetadata['file_name'] ?? null,
+                'video_part_number' => $clipMetadata['video_part_number'] ?? null,
+            ]);
+            $workerStart = $this->ensureAiWorkerStarting($matchId);
+            if ($this->isTerminalWorkerStartFailure($workerStart)) {
+                $analysis->failAnalysis($matchId, (string)$workerStart['message']);
+                $this->json([
+                    'error' => true,
+                    'message' => (string)$workerStart['message'],
+                    'match_id' => $matchId,
+                    'status' => 'failed',
+                    'refunded' => true,
+                    'worker_started' => false,
+                    'worker_state' => $workerStart['state'],
+                    'worker_error' => $workerStart['error'],
+                ], 503);
+                return;
+            }
             $started = $analysis->kickBackgroundProcessing($matchId);
+            $this->logAiApi('request:kick_result', [
+                'match_id' => $matchId,
+                'started' => $started,
+                'worker' => $workerStart,
+            ]);
 
             $this->json([
-                'message' => $started
-                    ? 'AI analysis started.'
-                    : 'AI analysis queued and will start shortly.',
+                'message' => $workerStart['message'] !== ''
+                    ? $workerStart['message']
+                    : ($started
+                        ? 'AI analysis started.'
+                        : 'AI analysis queued and will start shortly.'),
                 'match_id' => $matchId,
                 'status' => 'queued',
                 'jersey_number' => $jerseyNumber,
                 'team_color' => $teamColor,
+                'worker_started' => $workerStart['started'],
+                'worker_state' => $workerStart['state'],
+                'worker_error' => $workerStart['error'],
             ], 202);
         } catch (\Throwable $e) {
-            error_log('[api-video-analysis-request] ' . $e->getMessage());
+            $this->logAiApi('request:exception', [
+                'match_id' => $matchId,
+                'message' => $e->getMessage(),
+                'trace' => substr($e->getTraceAsString(), 0, 1200),
+            ]);
             $this->json(['error' => true, 'message' => 'The AI analysis could not be queued right now.'], 500);
         }
     }
@@ -800,15 +1468,163 @@ class ApiController
             return;
         }
 
-        $progress = (new VideoAnalysisService())->getLiveProgress($matchId);
-        $stats = $jerseyNumber > 0
-            ? (new MatchJerseyStatService())->getByMatchAndNumber($matchId, $jerseyNumber)
-            : null;
+        $analysisService = new VideoAnalysisService();
+        $progress = $analysisService->getLiveProgress($matchId);
+        $automation = [
+            'server_managed' => true,
+            'message' => 'AI processing is started by the website cron, not by the mobile app.',
+        ];
+        $stats = null;
+        if ($jerseyNumber > 0) {
+            $candidateStats = (new MatchJerseyStatService())->getByMatchAndNumber(
+                $matchId,
+                $jerseyNumber
+            );
+            if (
+                !is_array($candidateStats)
+                && strtolower(trim((string)($progress['status'] ?? ''))) === 'processed'
+            ) {
+                $candidateStats = $this->unlockProcessedJerseyStats(
+                    $matchId,
+                    $jerseyNumber,
+                    ApiAuth::uid(),
+                    $this->accountLabel(ApiAuth::account() ?? []),
+                    (new MatchVideoAnalysisService())->getByMatchId($matchId) ?? []
+                );
+            }
+            if (ApiAuth::isInstructor() || $this->userHasStatUnlock(
+                ApiAuth::uid(),
+                $matchId,
+                $jerseyNumber
+            )) {
+                $stats = $candidateStats;
+            }
+        }
 
         $this->json([
             'progress' => $progress,
             'stats' => $stats,
+            'stats_available' => is_array($candidateStats ?? null),
+            'automation' => $automation,
         ]);
+        $this->logAiApi('status:response', [
+            'match_id' => $matchId,
+            'jersey_number' => $jerseyNumber,
+            'progress' => $progress,
+            'has_stats' => $stats !== null,
+            'automation' => $automation,
+        ]);
+    }
+
+    private function unlockProcessedJerseyStats(
+        int $matchId,
+        int $jerseyNumber,
+        string $uid,
+        string $playerName,
+        array $analysis
+    ): ?array {
+        $statService = new MatchJerseyStatService();
+        $playerStats = $statService->assignPlayerToJersey(
+            $matchId,
+            $jerseyNumber,
+            $uid,
+            $playerName
+        ) ?: $statService->getByMatchAndNumber($matchId, $jerseyNumber);
+
+        if (is_array($playerStats)) {
+            return $playerStats;
+        }
+
+        $normalizedRows = $this->decodeJsonArray($analysis['normalized_stats'] ?? []);
+        foreach ($normalizedRows as $row) {
+            if (!is_array($row) || (int)($row['jersey_number'] ?? 0) !== $jerseyNumber) {
+                continue;
+            }
+
+            $row['match_id'] = (string)$matchId;
+            $row['jersey_number'] = $jerseyNumber;
+            $row['team_color'] = strtolower(trim((string)($row['team_color'] ?? '')))
+                ?: ($jerseyNumber <= 5 ? 'blue' : 'red');
+            $row['player_uid'] = $uid;
+            $row['player_name'] = $playerName;
+            $row['updated_at'] = gmdate('c');
+
+            $created = $statService->upsertByMatchAndNumber($matchId, $jerseyNumber, $row);
+            if (is_array($created)) {
+                $this->logAiApi('request:rebuilt_processed_jersey_stats', [
+                    'match_id' => $matchId,
+                    'uid' => $uid,
+                    'jersey_number' => $jerseyNumber,
+                ]);
+                return $created;
+            }
+
+            return null;
+        }
+
+        return null;
+    }
+
+    private function rememberAnalysisRequester(
+        int $matchId,
+        int $jerseyNumber,
+        string $uid,
+        string $playerName
+    ): void {
+        $slotService = new MatchJerseySlotService();
+        $slots = $slotService->ensureDefaults($matchId);
+        $assignments = [];
+        foreach ($slots as $slot) {
+            $number = (int)($slot['jersey_number'] ?? 0);
+            if ($number <= 0) {
+                continue;
+            }
+            $assignments[$number] = [
+                'player_uid' => $slot['player_uid'] ?? null,
+                'player_name' => $slot['player_name'] ?? null,
+            ];
+        }
+        $assignments[$jerseyNumber] = [
+            'player_uid' => $uid,
+            'player_name' => $playerName,
+        ];
+        $slotService->replaceAssignments($matchId, $assignments);
+
+    }
+
+    private function userHasStatUnlock(string $uid, int $matchId, int $jerseyNumber): bool
+    {
+        if ($uid === '' || $matchId <= 0 || $jerseyNumber <= 0) {
+            return false;
+        }
+
+        try {
+            $row = SupabaseClient::getInstance()
+                ->from('stat_unlocks')
+                ->select('id')
+                ->eq('user_id', $uid)
+                ->eq('match_id', (string)$matchId)
+                ->eq('shirt_number', (string)$jerseyNumber)
+                ->single()
+                ->execute();
+            return is_array($row) && empty($row['error']) && !empty($row['id']);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    private function decodeJsonArray(mixed $value): array
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+
+        if (!is_string($value) || trim($value) === '') {
+            return [];
+        }
+
+        $decoded = json_decode($value, true);
+        return is_array($decoded) ? $decoded : [];
     }
 
     /** POST /api/video-analysis/kick — Nudge an already queued analysis. */
@@ -837,20 +1653,53 @@ class ApiController
         $analysis = (new MatchVideoAnalysisService())->getByMatchId($matchId);
         $status = strtolower(trim((string)($analysis['processing_status'] ?? '')));
         if (!in_array($status, ['queued', 'processing'], true)) {
+            $this->logAiApi('kick:not_active', [
+                'match_id' => $matchId,
+                'status' => $status,
+            ]);
             $this->json(['message' => 'No active analysis needs starting.', 'kicked' => false, 'status' => $status]);
             return;
         }
 
         try {
-            $this->ensureAiWorkerStarting();
+            $workerStart = $this->ensureAiWorkerStarting($matchId);
+            if ($this->isTerminalWorkerStartFailure($workerStart)) {
+                (new VideoAnalysisService())->failAnalysis($matchId, (string)$workerStart['message']);
+                $this->json([
+                    'error' => true,
+                    'message' => (string)$workerStart['message'],
+                    'kicked' => false,
+                    'status' => 'failed',
+                    'refunded' => true,
+                    'worker_started' => false,
+                    'worker_state' => $workerStart['state'],
+                    'worker_error' => $workerStart['error'],
+                ], 503);
+                return;
+            }
             $kicked = (new VideoAnalysisService())->kickBackgroundProcessing($matchId);
+            $this->logAiApi('kick:result', [
+                'match_id' => $matchId,
+                'status' => $status,
+                'kicked' => $kicked,
+                'worker' => $workerStart,
+            ]);
             $this->json([
-                'message' => $kicked ? 'AI analysis worker started.' : 'AI analysis remains queued.',
+                'message' => $workerStart['message'] !== ''
+                    ? $workerStart['message']
+                    : ($kicked ? 'AI analysis worker started.' : 'AI analysis remains queued.'),
                 'kicked' => $kicked,
                 'status' => $status,
+                'worker_started' => $workerStart['started'],
+                'worker_state' => $workerStart['state'],
+                'worker_error' => $workerStart['error'],
             ]);
         } catch (\Throwable $e) {
-            error_log('[api-video-analysis-kick] ' . $e->getMessage());
+            $this->logAiApi('kick:exception', [
+                'match_id' => $matchId,
+                'message' => $e->getMessage(),
+                'trace' => substr($e->getTraceAsString(), 0, 1200),
+            ]);
             $this->json(['error' => true, 'message' => 'The AI worker could not be started right now.'], 500);
         }
     }
@@ -886,30 +1735,414 @@ class ApiController
         }
 
         $message = 'AI processing was stopped manually.';
+        $metadata = is_array($analysis['ai_output'] ?? null) ? $analysis['ai_output'] : [];
+        $selectedClip = is_array($metadata['selected_clip'] ?? null) ? $metadata['selected_clip'] : null;
+        $stoppedOutput = $metadata + [
+            'stopped_manually' => true,
+            'stopped_at' => gmdate('c'),
+        ];
+        $stoppedOutput['stopped_manually'] = true;
+        $stoppedOutput['stopped_at'] = gmdate('c');
+        if ($selectedClip !== null) {
+            $stoppedOutput['selected_clip'] = $selectedClip;
+        }
         $analysisService->updateByMatchId($matchId, [
             'processing_status' => 'failed',
             'error_message' => $message,
+            'ai_output' => $stoppedOutput,
+            'progress_stage' => 'failed',
+            'progress_percent' => 5,
+            'progress_message' => $message,
             'updated_at' => gmdate('c'),
         ]);
+        (new AiProgressService())->failed($matchId, $message);
         (new MatchService())->update($matchId, ['video_status' => 'failed']);
 
         $this->json(['message' => $message, 'stopped' => true, 'status' => 'failed']);
     }
 
-    private function ensureAiWorkerStarting(): void
+    /**
+     * Ensure a configured Runpod worker is running for an active AI request.
+     *
+     * @return array{started:bool,state:string,message:string,error:string}
+     */
+    private function ensureAiWorkerStarting(int $matchId): array
     {
+        $result = [
+            'started' => false,
+            'state' => 'unconfigured',
+            'message' => '',
+            'error' => '',
+        ];
+
         try {
-            $worker = new \App\Services\RunpodPodService();
+            $instanceKey = \App\Services\RunpodPodService::preferredInstanceKey();
+            $worker = new \App\Services\RunpodPodService($instanceKey);
             if (!$worker->isConfigured()) {
-                return;
+                $result['message'] = 'AI analysis is queued, but the Runpod worker is not configured.';
+                return $result;
             }
+
             $status = $worker->getStatus(true);
-            if (in_array(strtolower((string)($status['state'] ?? '')), ['stopped', 'unconfigured'], true)) {
-                $worker->startPod(true);
+            $state = strtolower(trim((string)($status['state'] ?? '')));
+            $result['state'] = $state !== '' ? $state : 'unknown';
+
+            if (in_array($state, ['ready', 'starting', 'stopping'], true)) {
+                $result['message'] = $state === 'ready'
+                    ? 'AI worker is ready. Analysis is starting.'
+                    : 'Runpod is already starting the AI worker.';
+                return $result;
+            }
+
+            // Retry provisioning for stopped, unavailable, error, and stale
+            // placeholder states. The queue remains durable if Runpod has no
+            // capacity, and the mobile monitor will nudge this endpoint again.
+            $started = \App\Services\RunpodPodService::startLeastCostAvailable();
+            $startedStatus = is_array($started['status'] ?? null) ? $started['status'] : [];
+            $startedState = strtolower(trim((string)($startedStatus['state'] ?? 'starting')));
+
+            $result['started'] = true;
+            $result['state'] = $startedState !== '' ? $startedState : 'starting';
+            $result['message'] = 'GPU requested from Runpod. Waiting for the AI worker to boot.';
+
+            try {
+                (new \App\Services\AiProgressService())->queuedStage(
+                    $matchId,
+                    'gpu_requested',
+                    6,
+                    $result['message']
+                );
+            } catch (\Throwable $progressError) {
+                error_log('[api-video-analysis-worker-progress] ' . $progressError->getMessage());
             }
         } catch (\Throwable $e) {
             error_log('[api-video-analysis-worker-start] ' . $e->getMessage());
+            $result['state'] = 'queued';
+            $result['error'] = $e->getMessage();
+            $errorText = strtolower($e->getMessage());
+            if (str_contains($errorText, 'no gpu')) {
+                $result['message'] = 'No GPU is available right now. Your credit has been refunded. Please start AI again later.';
+            } elseif ($this->isRunpodAuthOrConfigError($e->getMessage())) {
+                $result['message'] = 'AI worker configuration failed: Runpod API key/settings are not accepted. Your credit has been refunded. Please try again after admin fixes Runpod.';
+            } else {
+                $result['message'] = 'Your analysis is queued. Runpod startup will retry automatically.';
+            }
         }
+
+        return $result;
+    }
+
+    private function isTerminalWorkerStartFailure(array $workerStart): bool
+    {
+        $text = strtolower(trim(
+            (string)($workerStart['error'] ?? '')
+            . ' '
+            . (string)($workerStart['message'] ?? '')
+        ));
+
+        return str_contains($text, 'no gpu')
+            || str_contains($text, 'gpu is available')
+            || str_contains($text, 'gpu available')
+            || $this->isRunpodAuthOrConfigError($text);
+    }
+
+    private function isRunpodAuthOrConfigError(string $message): bool
+    {
+        $text = strtolower($message);
+        return str_contains($text, 'api key')
+            || str_contains($text, 'http 401')
+            || str_contains($text, 'http 403')
+            || str_contains($text, 'unauthorized')
+            || str_contains($text, 'forbidden')
+            || str_contains($text, 'not configured');
+    }
+
+    /**
+     * Status polling is the one dependable recurring signal from the mobile
+     * app. Use it to retry provisioning and queue pickup when shared-hosting
+     * cron or background execution is delayed.
+     */
+    private function nudgeQueuedVideoAnalysis(
+        int $matchId,
+        VideoAnalysisService $analysisService
+    ): array {
+        $cacheKey = 'nutmeg:video-analysis:auto-nudge:' . $matchId;
+        $cached = Cache::get($cacheKey);
+        if (is_array($cached)) {
+            return $cached;
+        }
+
+        $result = [
+            'attempted' => true,
+            'kicked' => false,
+            'worker_started' => false,
+            'worker_state' => 'queued',
+            'message' => 'AI automation retry is in progress.',
+        ];
+
+        // Set the throttle before network calls so overlapping mobile polls do
+        // not rent multiple pods while the first Runpod request is in flight.
+        Cache::put($cacheKey, $result, 45);
+
+        try {
+            $workerStart = $this->ensureAiWorkerStarting($matchId);
+            if ($this->isTerminalWorkerStartFailure($workerStart)) {
+                $analysisService->failAnalysis($matchId, (string)$workerStart['message']);
+                $result['worker_started'] = false;
+                $result['worker_state'] = 'failed';
+                $result['message'] = (string)$workerStart['message'];
+                Cache::put($cacheKey, $result, 45);
+                return $result;
+            }
+            $result['worker_started'] = (bool)($workerStart['started'] ?? false);
+            $result['worker_state'] = (string)($workerStart['state'] ?? 'queued');
+            $result['message'] = (string)($workerStart['message'] ?? $result['message']);
+            $result['kicked'] = $analysisService->kickBackgroundProcessing($matchId);
+        } catch (\Throwable $e) {
+            error_log('[api-video-analysis-auto-nudge] ' . $e->getMessage());
+            $result['message'] = 'AI analysis remains queued and will retry automatically.';
+        }
+
+        Cache::put($cacheKey, $result, 45);
+        return $result;
+    }
+
+    private function stripeRequest(string $method, string $path, array $payload, string $secretKey): array
+    {
+        if (!function_exists('curl_init')) {
+            throw new \RuntimeException('The PHP cURL extension is required for Stripe checkout.');
+        }
+
+        $url = 'https://api.stripe.com' . $path;
+        $ch = curl_init($url);
+        $headers = [
+            'Authorization: Bearer ' . $secretKey,
+            'Content-Type: application/x-www-form-urlencoded',
+        ];
+
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_CUSTOMREQUEST => $method,
+            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
+        ]);
+
+        if ($method !== 'GET') {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($payload));
+        }
+
+        $response = curl_exec($ch);
+        $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        if (PHP_VERSION_ID < 80500) {
+            curl_close($ch);
+        }
+
+        if ($error !== '') {
+            throw new \RuntimeException('Stripe cURL error: ' . $error);
+        }
+
+        $decoded = json_decode((string)$response, true);
+        if ($httpCode >= 400) {
+            $message = is_array($decoded)
+                ? (string)($decoded['error']['message'] ?? $decoded['message'] ?? $response)
+                : (string)$response;
+            throw new \RuntimeException('Stripe HTTP ' . $httpCode . ': ' . $message);
+        }
+
+        if (!is_array($decoded)) {
+            throw new \RuntimeException('Stripe returned an invalid response.');
+        }
+
+        return $decoded;
+    }
+
+    private function checkoutReturnUrl(string $requestedUrl, string $fallbackUrl, array $params): string
+    {
+        $baseUrl = trim($requestedUrl);
+        if (!$this->isAllowedCheckoutReturnUrl($baseUrl)) {
+            $baseUrl = $fallbackUrl;
+        }
+
+        return $this->appendQueryParams($baseUrl, $params);
+    }
+
+    private function isAllowedCheckoutReturnUrl(string $url): bool
+    {
+        if ($url === '') {
+            return false;
+        }
+
+        $scheme = strtolower((string)(parse_url($url, PHP_URL_SCHEME) ?: ''));
+        if (in_array($scheme, ['fivestats', 'nutmegplay', 'exp', 'exps'], true)) {
+            return true;
+        }
+
+        if (!in_array($scheme, ['http', 'https'], true)) {
+            return false;
+        }
+
+        $host = strtolower((string)(parse_url($url, PHP_URL_HOST) ?: ''));
+        return in_array($host, ['localhost', '127.0.0.1', 'nutmegplay.fr', 'fivestats.fr'], true);
+    }
+
+    private function appendQueryParams(string $url, array $params): string
+    {
+        $separator = str_contains($url, '?') ? '&' : '?';
+        $pairs = [];
+        foreach ($params as $key => $value) {
+            $rawValue = (string)$value;
+            $pairs[] = rawurlencode((string)$key) . '=' . (
+                $rawValue === '{CHECKOUT_SESSION_ID}'
+                    ? $rawValue
+                    : rawurlencode($rawValue)
+            );
+        }
+
+        return $url . $separator . implode('&', $pairs);
+    }
+
+    private function verifyStripeWebhookSignature(string $payload, string $header, string $secret): bool
+    {
+        if ($payload === '' || $header === '' || $secret === '') {
+            return false;
+        }
+
+        $timestamp = '';
+        $signatures = [];
+        foreach (explode(',', $header) as $part) {
+            [$key, $value] = array_pad(explode('=', trim($part), 2), 2, '');
+            if ($key === 't') {
+                $timestamp = $value;
+            } elseif ($key === 'v1' && $value !== '') {
+                $signatures[] = $value;
+            }
+        }
+
+        if ($timestamp === '' || $signatures === []) {
+            return false;
+        }
+
+        if (abs(time() - (int)$timestamp) > 300) {
+            return false;
+        }
+
+        $expected = hash_hmac('sha256', $timestamp . '.' . $payload, $secret);
+        foreach ($signatures as $signature) {
+            if (hash_equals($expected, $signature)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function grantCreditsForStripeSession(array $session): array
+    {
+        $sessionId = trim((string)($session['id'] ?? ''));
+        if ($sessionId === '') {
+            throw new \RuntimeException('Stripe session id is missing.');
+        }
+
+        $paymentStatus = strtolower(trim((string)($session['payment_status'] ?? '')));
+        if ($paymentStatus !== 'paid') {
+            throw new \RuntimeException('Stripe session is not paid.');
+        }
+
+        $metadata = is_array($session['metadata'] ?? null) ? $session['metadata'] : [];
+        $uid = trim((string)($metadata['user_id'] ?? $session['client_reference_id'] ?? ''));
+        $packKey = strtolower(trim((string)($metadata['pack_key'] ?? 'solo')));
+        $packs = $this->creditPacks();
+        $pack = $packs[$packKey] ?? null;
+        if ($uid === '' || $pack === null) {
+            throw new \RuntimeException('Stripe session metadata is missing user or pack details.');
+        }
+
+        $credits = (int)($metadata['credits'] ?? $pack['credits']);
+        if ($credits <= 0) {
+            $credits = (int)$pack['credits'];
+        }
+
+        $db = SupabaseClient::getInstance();
+        $transaction = [
+            'user_id' => $uid,
+            'amount' => $credits,
+            'kind' => 'purchase',
+            'pack_key' => $packKey,
+            'stripe_session_id' => $sessionId,
+            'note' => 'Stripe credit purchase: ' . $pack['name'],
+        ];
+        $inserted = $db->from('credit_transactions')->insert($transaction);
+        if (!$inserted || !empty($inserted['error'])) {
+            $message = strtolower((string)($inserted['message'] ?? ''));
+            if (str_contains($message, 'duplicate') || str_contains($message, 'unique')) {
+                return [
+                    'already_credited' => true,
+                    'credits' => 0,
+                    'pack_key' => $packKey,
+                ];
+            }
+
+            throw new \RuntimeException('Could not record Stripe credit transaction.');
+        }
+
+        $summary = $this->creditSummary($uid);
+        $existingBalance = (int)($summary['balance'] ?? 0);
+        $welcomeUsed = (bool)($summary['welcome_used'] ?? false);
+        $creditRow = [
+            'user_id' => $uid,
+            'balance' => $existingBalance + $credits,
+            'welcome_used' => $welcomeUsed || $packKey === 'welcome',
+            'updated_at' => gmdate('c'),
+        ];
+
+        if ($summary['exists'] ?? false) {
+            $updated = SupabaseClient::getInstance()
+                ->from('user_credits')
+                ->eq('user_id', $uid)
+                ->update($creditRow);
+            if (!$updated || !empty($updated['error'])) {
+                throw new \RuntimeException('Could not update user credit balance.');
+            }
+        } else {
+            $created = SupabaseClient::getInstance()->from('user_credits')->insert($creditRow);
+            if (!$created || !empty($created['error'])) {
+                throw new \RuntimeException('Could not create user credit balance.');
+            }
+        }
+
+        return [
+            'already_credited' => false,
+            'credits' => $credits,
+            'pack_key' => $packKey,
+        ];
+    }
+
+    private function creditSummary(string $uid): array
+    {
+        if ($uid === '') {
+            return ['exists' => false, 'balance' => 0, 'welcome_used' => false];
+        }
+
+        $row = SupabaseClient::getInstance()
+            ->from('user_credits')
+            ->select('balance, welcome_used')
+            ->eq('user_id', $uid)
+            ->single()
+            ->execute();
+
+        if (!$row || !empty($row['error'])) {
+            return ['exists' => false, 'balance' => 0, 'welcome_used' => false];
+        }
+
+        return [
+            'exists' => true,
+            'balance' => (int)($row['balance'] ?? 0),
+            'welcome_used' => (bool)($row['welcome_used'] ?? false),
+        ];
     }
 
     /** Calculate XP from match stats */
@@ -952,6 +2185,91 @@ class ApiController
             'recent'  => $recent,
             'matches' => $matches,
         ]);
+    }
+
+    /** GET /api/videos/library — List Backblaze-hosted recordings. */
+    public function videoLibrary(): void
+    {
+        ApiAuth::require();
+
+        if (!B2VideoStorageService::isConfigured()) {
+            $this->json([
+                'matches' => [],
+                'storage' => 'backblaze_b2',
+                'message' => 'Backblaze video storage is not configured.',
+            ], 503);
+            return;
+        }
+
+        try {
+            $objects = (new B2VideoStorageService())->listVideos(500, '');
+            $matchIds = array_values(array_unique(array_filter(array_map(
+                static fn(array $video): int => (int)($video['match_id'] ?? 0),
+                $objects
+            ))));
+            $matchesById = [];
+            foreach ((new MatchService())->getByIds($matchIds) as $match) {
+                $matchesById[(int)($match['id'] ?? 0)] = $match;
+            }
+
+            $videos = [];
+            foreach ($objects as $object) {
+                $matchId = (int)($object['match_id'] ?? 0);
+                $match = $matchesById[$matchId] ?? [];
+                $timestamp = (int)($object['modified_at'] ?? 0);
+                $recordedAt = $timestamp > 0 ? gmdate('c', $timestamp) : null;
+                $rawVideoUrl = (string)($object['url'] ?? '');
+                $videoUrl = $rawVideoUrl;
+                if ($videoUrl !== '' && $timestamp > 0) {
+                    $videoUrl .= (str_contains($videoUrl, '?') ? '&' : '?') . 'v=' . $timestamp;
+                }
+                $videos[] = [
+                    'id' => $matchId > 0 ? $matchId : ('b2-' . (string)($object['file_id'] ?? '')),
+                    'match_id' => $matchId > 0 ? $matchId : null,
+                    'recording_id' => (string)($object['file_id'] ?? ''),
+                    'b2_source' => true,
+                    'storage_source' => 'backblaze_b2',
+                    'object_name' => (string)($object['object_name'] ?? ''),
+                    'folder_name' => (string)($object['folder_name'] ?? ''),
+                    'folder_path' => (string)($object['folder_path'] ?? ''),
+                    'video_group_key' => (string)($object['video_group_key'] ?? ''),
+                    'video_part_number' => isset($object['video_part_number']) ? (int)$object['video_part_number'] : null,
+                    'camera_number' => isset($object['camera_number']) ? (int)$object['camera_number'] : null,
+                    'file_name' => (string)($object['file_name'] ?? $object['name'] ?? 'Match video'),
+                    'display_title' => $matchId > 0
+                        ? trim((string)($match['challanger'] ?? 'Team A'))
+                            . ' vs. '
+                            . trim((string)($match['opponent'] ?? 'Team B'))
+                        : (string)($object['recording_title'] ?? $object['folder_name'] ?? $object['name'] ?? 'Match video'),
+                    'challanger' => $match['challanger'] ?? 'FiveStats',
+                    'opponent' => $match['opponent'] ?? 'Video',
+                    'date' => $match['date'] ?? $object['recording_date'] ?? ($timestamp > 0 ? gmdate('Y-m-d', $timestamp) : null),
+                    'time' => $match['time'] ?? $object['recording_time'] ?? ($timestamp > 0 ? gmdate('H:i:s', $timestamp) : null),
+                    'recording_at' => $recordedAt,
+                    'location' => $match['location'] ?? $object['recording_location'] ?? 'FiveStats Cloud',
+                    'video_url' => $videoUrl,
+                    'storage_version' => $timestamp > 0 ? (string)$timestamp : null,
+                    'thumbnail_url' => null,
+                    'video_status' => $match['video_status'] ?? 'available',
+                    'match_status' => $match['match_status'] ?? 'available',
+                    'display_status' => 'available',
+                    'size_bytes' => (int)($object['size_bytes'] ?? 0),
+                    'jerseyStatsRows' => [],
+                    'statsRows' => [],
+                ];
+            }
+
+            $this->json([
+                'matches' => $videos,
+                'storage' => 'backblaze_b2',
+            ]);
+        } catch (\Throwable $e) {
+            error_log('[b2-video-library] ' . $e->getMessage());
+            $this->json([
+                'error' => true,
+                'message' => 'Videos could not be loaded from Backblaze right now.',
+            ], 503);
+        }
     }
 
     /* ================================================================== */

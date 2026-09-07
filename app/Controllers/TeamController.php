@@ -13,6 +13,11 @@ class TeamController extends Controller
     /** GET /teams */
     public function index(): void
     {
+        if (!Auth::check()) {
+            (new PublicPageController())->teams();
+            return;
+        }
+
         Auth::requireAuth();
 
         $clubs    = new ClubService();

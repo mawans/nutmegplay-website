@@ -584,6 +584,10 @@ class RunpodPodService
         }
 
         $status = $this->getStatus($useCache);
+        if (empty($status['ai_ready'])) {
+            return null;
+        }
+
         $resolved = trim((string)($status['resolved_ai_base_url'] ?? ''));
         return $resolved !== '' ? $resolved : null;
     }
@@ -653,6 +657,19 @@ class RunpodPodService
 
                 try {
                     if (!$safeToTerminate) {
+                        $canRecycleUnhealthyPod = $this->isDynamicManagedInstance()
+                            && $this->shouldTerminateDynamicPods()
+                            && !$health['ok']
+                            && $uptimeSeconds !== null
+                            && $uptimeSeconds >= self::WARMUP_WARNING_SECONDS
+                            && $this->countActiveJobsFromDb(strict: true) === 0;
+                        if ($canRecycleUnhealthyPod) {
+                            $this->terminateCurrentPod();
+                            return $this->dynamicStoppedStatus(
+                                'The unhealthy AI worker was recycled. A fresh GPU will be provisioned for the next queued analysis.'
+                            );
+                        }
+
                         $state = 'ready';
                         $label = 'Ready';
                         $message = 'The AI worker is warm and ready to process uploads.';
@@ -682,6 +699,25 @@ class RunpodPodService
                 $label = 'Ready';
                 $message = 'The AI worker is warm and ready to process uploads.';
             } else {
+                if (
+                    $this->isDynamicManagedInstance()
+                    && $this->shouldTerminateDynamicPods()
+                    && $uptimeSeconds !== null
+                    && $uptimeSeconds >= self::WARMUP_WARNING_SECONDS
+                    && $activeJobCount === 0
+                ) {
+                    try {
+                        if ($this->countActiveJobsFromDb(strict: true) === 0) {
+                            $this->terminateCurrentPod();
+                            return $this->dynamicStoppedStatus(
+                                'The unhealthy AI worker was recycled. A fresh GPU will be provisioned for the next queued analysis.'
+                            );
+                        }
+                    } catch (\Throwable $e) {
+                        error_log('[runpod-stale-recycle] ' . $e->getMessage());
+                    }
+                }
+
                 $state = 'starting';
                 $label = 'Warming Up';
                 if ($resolvedAiBaseUrl === null || $resolvedAiBaseUrl === '') {
@@ -1000,7 +1036,7 @@ class RunpodPodService
 
         $ch = curl_init();
         $verifyTls = $this->isHttpsEndpoint($endpoint) && $this->shouldVerifyTls();
-        $options = array_replace($this->curlNetworkOptions(4000, 8000), [
+        $options = array_replace($this->curlNetworkOptions(2500, 4000), [
             CURLOPT_URL => $endpoint,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPGET => true,
@@ -1815,10 +1851,17 @@ class RunpodPodService
      */
     private function aiWorkerReportsActiveJobs(): ?bool
     {
-        try {
-            $base = $this->resolveAiBaseUrl(true);
-        } catch (\Throwable $e) {
-            return null;
+        $podId = $this->podId();
+        $base = $podId !== '' ? $this->workingAiBaseUrl($podId) : null;
+        if ($base === null && $podId !== '') {
+            $base = sprintf(
+                'https://%s-%d.proxy.runpod.net',
+                $podId,
+                $this->fastApiInternalPort()
+            );
+        }
+        if ($base === null) {
+            $base = $this->configuredAiBaseUrl();
         }
         if (!is_string($base) || $base === '') {
             return null;

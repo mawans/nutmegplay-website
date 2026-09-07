@@ -9,10 +9,8 @@ require_once BASE_PATH . '/includes/header.php';
     <div class="w-full max-w-md">
         <div class="bg-white dark:bg-card-dark border border-slate-200 dark:border-[#264531] rounded-lg p-8">
             <div class="text-center mb-8">
-                <div class="size-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                    <span class="material-symbols-outlined text-primary text-4xl">sports_soccer</span>
-                </div>
-                <h1 class="text-2xl font-bold mb-2"><?= $isRegister ? 'Create Your Account' : 'Welcome to Nutmeg' ?></h1>
+                <img src="/public/assets/fivestats-logo.png" alt="FiveStats" class="size-16 rounded-2xl mx-auto mb-4">
+                <h1 class="text-2xl font-bold mb-2"><?= $isRegister ? 'Create Your Account' : 'Welcome to FiveStats' ?></h1>
                 <p class="text-slate-500 dark:text-text-muted"><?= $isRegister ? 'Join the pitch' : 'Sign in to your account' ?></p>
             </div>
 

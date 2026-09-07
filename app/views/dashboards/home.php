@@ -51,7 +51,7 @@ require_once BASE_PATH . '/includes/sidenav.php';
 <!-- Stat Card 1 -->
 <div class="bg-white dark:bg-card-dark border border-slate-200 dark:border-[#264531] p-5 md:p-6 rounded-lg flex flex-col gap-1 transition-all duration-300 hover:shadow-lg hover:border-primary/30 hover:-translate-y-0.5 cursor-pointer group">
 <div class="flex items-center gap-2 text-muted mb-1 group-hover:text-primary transition-colors">
-<span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform" style="font-size: 20px;">sports_soccer</span>
+<img src="/public/assets/fivestats-logo.png" alt="" class="size-5 rounded-md group-hover:scale-110 transition-transform">
 <span class="text-sm font-medium">Total Goals</span>
 </div>
 <p class="text-3xl md:text-4xl font-bold tracking-tight"><?= number_format($userTotals['goals'] ?? 0) ?></p>
@@ -209,7 +209,7 @@ $displayScoreAway = $dm['score_away'] ?? ($dm['score_opponent'] ?? '–');
 </div>
 <?php else: ?>
 <div class="bg-white dark:bg-card-dark border border-slate-200 dark:border-[#264531] rounded-lg p-8 text-center">
-<span class="material-symbols-outlined text-5xl text-muted mb-2">sports_soccer</span>
+<img src="/public/assets/fivestats-logo.png" alt="" class="size-14 rounded-xl mx-auto mb-3 opacity-70">
 <?php if ($canManageMatchmaking): ?>
 <p class="text-muted">No matches yet. <a href="/matchmaking" class="text-primary hover:underline">Create your first match</a>.</p>
 <?php else: ?>
@@ -313,7 +313,7 @@ $displayScoreAway = $dm['score_away'] ?? ($dm['score_opponent'] ?? '–');
 </div>
 </div>
 <footer class="mt-8 text-center pb-4">
-<p class="text-xs text-muted">NutmegPlay Dashboard v2.4.1 © 2024</p>
+<p class="text-xs text-muted">FiveStats Dashboard v2.4.1 © 2024</p>
 </footer>
 </div>
 </div>
